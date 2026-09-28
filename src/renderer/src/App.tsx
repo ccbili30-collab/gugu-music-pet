@@ -1,18 +1,56 @@
 import { useEffect, useRef, useState } from 'react'
 import { PetEngine } from './pet/engine'
-import { bus, type BubbleData } from './pet/bus'
+import { AudioEngine } from './pet/audio'
+import { bus, makeBubble, type BubbleData } from './pet/bus'
+import { computeRegions, reportRegions } from './pet/regions'
 import { Bubbles } from './overlay/Bubbles'
 import { MicOrb } from './overlay/MicOrb'
+import { MiniPlayer } from './overlay/MiniPlayer'
 import { ContextMenu, type MenuItem } from './overlay/ContextMenu'
 
 
 export default function App(): JSX.Element {
   const hostRef = useRef<HTMLDivElement>(null)
   const engineRef = useRef<PetEngine | null>(null)
+  const [audio, setAudio] = useState<AudioEngine | null>(null)
   const [bubbles, setBubbles] = useState<BubbleData[]>([])
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
   const [packs, setPacks] = useState<{ id: string; name: string; version: string }[]>([])
   const [currentPack, setCurrentPack] = useState('pigeon')
+  const [hasTrack, setHasTrack] = useState(false)
+
+  // 音乐状态（迷你播放器/交互区域需要知道是否有曲目）
+  useEffect(() => {
+    void window.gugu.music.playerState().then((s) => setHasTrack(!!s.track))
+    const off = window.gugu.onMusicState(({ player }) => setHasTrack(!!player.track))
+    return off
+  }, [])
+
+  // 交互区域上报（点击穿透用）
+  useEffect(() => {
+    reportRegions(
+      computeRegions({
+        bubbleCount: bubbles.length,
+        menu: menu ? { x: menu.x, y: menu.y, items: 9 + packs.length } : null,
+        hasTrack
+      })
+    )
+  }, [bubbles.length, menu, hasTrack, packs.length])
+
+  // 音频引擎（渲染层唯一 <audio>）
+  useEffect(() => {
+    const eng = new AudioEngine()
+    eng.onError = (msg) => bus.emit('bubble', makeBubble({ kind: 'say', text: msg, ttl: 5000 }))
+    eng.onTrackChange = (track, trial) => {
+      if (!track) return
+      bus.emit('trackChange', { name: track.name, artists: track.artists, trial })
+    }
+    setAudio(eng)
+    return () => {
+      eng.destroy()
+      setAudio(null)
+    }
+  }, [])
 
   useEffect(() => {
     void window.gugu.packsList().then(setPacks)
@@ -56,8 +94,22 @@ export default function App(): JSX.Element {
     return off
   }, [])
 
+  const playRandom = async (): Promise<void> => {
+    try {
+      const list = await window.gugu.music.recommend()
+      if (!list.length) {
+        bus.emit('bubble', makeBubble({ kind: 'say', text: '推荐列表空空的…等会儿再试', ttl: 4000 }))
+        return
+      }
+      await audio?.playQueue(list, 0)
+    } catch {
+      bus.emit('bubble', makeBubble({ kind: 'say', text: '拿推荐列表失败了，检查下网络？', ttl: 4000 }))
+    }
+  }
+
   const items: MenuItem[] = [
     { label: '💬 陪我聊聊', onClick: () => window.gugu.openChat() },
+    { label: '🎵 随机来一首', onClick: () => void playRandom() },
     { label: '🚶 走两步', onClick: () => engineRef.current?.walkTo() },
     { label: '🕊️ 飞一圈', onClick: () => engineRef.current?.flyAround() },
     engineRef.current?.isSleeping
@@ -70,6 +122,7 @@ export default function App(): JSX.Element {
         }))
       : []),
     { label: '⚙️ 设置（即将上线）', disabled: true, onClick: () => {} },
+    { label: '🔑 扫码登录网易云', onClick: () => window.gugu.openLogin() },
     { label: '🚪 再见', onClick: () => window.gugu.quit() }
   ]
 
@@ -78,6 +131,7 @@ export default function App(): JSX.Element {
       <div ref={hostRef} className="stage" />
       <Bubbles items={bubbles} />
       <MicOrb />
+      <MiniPlayer engine={audio} />
       {menu && (
         <ContextMenu
           x={menu.x}

@@ -9,6 +9,7 @@ export const PET_WINDOW = { width: 560, height: 420, anchorX: 250, anchorY: 316 
 
 let petWin: BrowserWindow | null = null
 let chatWin: BrowserWindow | null = null
+let loginWin: BrowserWindow | null = null
 
 function rendererUrl(name: string): string | null {
   const base = process.env['ELECTRON_RENDERER_URL']
@@ -112,6 +113,38 @@ export function focusPet(): void {
     win.show()
     win.focus()
   }
+}
+
+export function createLoginWindow(): BrowserWindow {
+  if (loginWin && !loginWin.isDestroyed()) {
+    loginWin.show()
+    loginWin.focus()
+    return loginWin
+  }
+  loginWin = new BrowserWindow({
+    width: 300,
+    height: 420,
+    resizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    show: false,
+    titleBarStyle: 'hiddenInset',
+    trafficLightPosition: { x: 12, y: 12 },
+    backgroundColor: '#00000000',
+    title: '登录网易云',
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false
+    }
+  })
+  loadRenderer(loginWin, 'login')
+  loginWin.once('ready-to-show', () => {
+    loginWin?.show()
+    loginWin?.focus()
+  })
+  return loginWin
 }
 
 let appQuitting = false

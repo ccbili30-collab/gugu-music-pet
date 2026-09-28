@@ -1,4 +1,6 @@
 import { Application, Container, Rectangle, Sprite, Texture } from 'pixi.js'
+// CSP 禁止 unsafe-eval 时 Pixi v8 需要这个兼容模块（shader 编译走非 eval 路径）
+import 'pixi.js/unsafe-eval'
 import { loadPack, type LoadedPack } from './pack'
 import { Animator } from './animator'
 import { Motion } from './motion'
@@ -232,6 +234,7 @@ export class PetEngine {
         this.walking = null
         this.minorAction = null
         sprite.cursor = 'grabbing'
+        window.gugu.setDragging(true)
         window.gugu.emitEvent('drag_start')
       }
       if (this.dragging) {
@@ -257,6 +260,7 @@ export class PetEngine {
       if (this.dragging) {
         this.dragging = false
         sprite.cursor = 'grab'
+        window.gugu.setDragging(false)
         // 由最近 150ms 采样估计投掷速度
         const recent = this.samples.filter((s) => now - s.t < 160)
         const first = recent[0] ?? this.samples[this.samples.length - 1]

@@ -1,6 +1,7 @@
 import { ipcMain, screen, app } from 'electron'
-import { getPetWindow, createChatWindow, PET_WINDOW, setAppQuitting } from './windows'
+import { getPetWindow, createChatWindow, createLoginWindow, PET_WINDOW, setAppQuitting } from './windows'
 import { registerPacksIpc } from './packs'
+import { setRegions, setDragging } from './clickthrough'
 
 export interface PetEventPayload {
   [key: string]: unknown
@@ -31,6 +32,9 @@ export function registerIpc(): void {
   })
 
   ipcMain.on('chat:open', () => createChatWindow())
+  ipcMain.on('login:open', () => createLoginWindow())
+  ipcMain.on('ui:regions', (_e, rects) => setRegions(rects))
+  ipcMain.on('ui:dragging', (_e, d: boolean) => setDragging(d))
   ipcMain.on('app:quit', () => {
     setAppQuitting()
     app.quit()

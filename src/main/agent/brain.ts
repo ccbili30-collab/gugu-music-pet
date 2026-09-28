@@ -1,7 +1,7 @@
 // 大脑：会话编排（tool-calling 循环）+ 记忆 + 驱动力 + 安静自主性 + 反射层
 import { BrowserWindow } from 'electron'
 import { chatCompletion, llmReady, type LlmMessage } from './llm'
-import { systemPrompt, memoryExtractPrompt, autonomyPrompt } from './prompt'
+import { systemPrompt, memoryExtractPrompt, autonomyPrompt, singPoolPrompt, singSummaryPrompt } from './prompt'
 import { toolDefinitions, dispatchTool, type ToolContext } from './tools'
 import { formatContext, readIndex, storeMemory } from './memory'
 import { DriveSystem } from './drives'
@@ -235,6 +235,48 @@ export class Brain {
 
   get chatHistory(): ChatMsg[] {
     return this.history
+  }
+
+  /** 伴唱：夸夸池（LLM 批量生成，失败返回空数组走渲染层兜底） */
+  async singPool(): Promise<string[]> {
+    const cfg = loadConfig()
+    if (!llmReady(cfg.llm)) return []
+    const track = musicService.api.currentState().track
+    const p = singPoolPrompt(track ? `《${track.name}》- ${track.artists}` : '')
+    const res = await chatCompletion(
+      cfg.llm,
+      [
+        { role: 'system', content: p.system },
+        { role: 'user', content: p.user }
+      ],
+      undefined,
+      { maxTokens: 300, temperature: 1.0 }
+    )
+    if (!res.ok) return []
+    const m = /\[[\s\S]*\]/.exec(res.content)
+    if (!m) return []
+    try {
+      const arr = JSON.parse(m[0]) as unknown[]
+      return arr.filter((x) => typeof x === 'string').map((x) => String(x).slice(0, 20))
+    } catch {
+      return []
+    }
+  }
+
+  async singSummary(durSec: number): Promise<string> {
+    const cfg = loadConfig()
+    if (!llmReady(cfg.llm)) return ''
+    const p = singSummaryPrompt(durSec)
+    const res = await chatCompletion(
+      cfg.llm,
+      [
+        { role: 'system', content: p.system },
+        { role: 'user', content: p.user }
+      ],
+      undefined,
+      { maxTokens: 60, temperature: 0.9 }
+    )
+    return res.ok ? res.content.trim().slice(0, 30) : ''
   }
 
   clearHistory(): void {

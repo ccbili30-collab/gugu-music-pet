@@ -92,3 +92,19 @@ export function songResonancePrompt(track: { name: string; artists: string }): {
     user: `《${track.name}》- ${track.artists}\n发出一句共鸣：`
   }
 }
+
+/** 伴唱夸夸池（只鼓励不批评） */
+export function singPoolPrompt(nowPlaying: string): { system: string; user: string } {
+  return {
+    system:
+      '你在为主人的"跟唱伴唱模式"生成夸夸弹幕池。主人正在对着伴奏唱歌，宠物会随机弹出这些短评鼓励他。输出一个 JSON 数组，包含 10 条，每条 4~12 个字，热烈、真诚、只夸不批、口语化，不要 emoji。例如："这句绝了"、"高音太顶了"。',
+    user: `当前伴奏：${nowPlaying || '未知'}\n生成 10 条夸夸：`
+  }
+}
+
+export function singSummaryPrompt(durSec: number): { system: string; user: string } {
+  return {
+    system: '主人刚跟唱完一段，宠物要给一句总结夸夸。输出 8~20 字，只夸不批，真诚不油腻，不要 emoji。',
+    user: `刚才唱了大约 ${durSec} 秒。给一句总结：`
+  }
+}

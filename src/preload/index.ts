@@ -102,6 +102,10 @@ export interface GuguApi {
   }
   onChatReply(cb: (msg: ChatReplyMsg) => void): () => void
   onChatCard(cb: (msg: SongsCardMsg) => void): () => void
+  sing: {
+    pool(): Promise<string[]>
+    summary(durSec: number): Promise<string>
+  }
 }
 
 const api: GuguApi = {
@@ -173,6 +177,10 @@ const api: GuguApi = {
     const listener = (_e: IpcRendererEvent, msg: SongsCardMsg): void => cb(msg)
     ipcRenderer.on('chat:card', listener)
     return () => ipcRenderer.removeListener('chat:card', listener)
+  },
+  sing: {
+    pool: () => ipcRenderer.invoke('sing:pool'),
+    summary: (durSec) => ipcRenderer.invoke('sing:summary', durSec)
   }
 }
 

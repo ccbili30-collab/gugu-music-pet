@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { PetEngine } from './pet/engine'
 import { AudioEngine } from './pet/audio'
+import { MicEngine } from './pet/mic'
 import { bus, makeBubble, type BubbleData } from './pet/bus'
 import { computeRegions, reportRegions } from './pet/regions'
 import { Bubbles } from './overlay/Bubbles'
@@ -13,6 +14,29 @@ export default function App(): JSX.Element {
   const hostRef = useRef<HTMLDivElement>(null)
   const engineRef = useRef<PetEngine | null>(null)
   const [audio, setAudio] = useState<AudioEngine | null>(null)
+  const [mic, setMic] = useState<MicEngine | null>(null)
+  const [micOn, setMicOn] = useState(false)
+  const audioRef = useRef<AudioEngine | null>(null)
+  const micRef = useRef<MicEngine | null>(null)
+
+  // 装配音律源（引擎与音频引擎都就绪后）
+  useEffect(() => {
+    let tries = 0
+    const t = window.setInterval(() => {
+      tries++
+      if (engineRef.current && audioRef.current) {
+        engineRef.current.setAudioSource({
+          playing: () => audioRef.current?.isPlaying ?? false,
+          analyser: () => audioRef.current?.getAnalyser() ?? null,
+          micLevel: () => micRef.current?.level ?? 0
+        })
+        window.clearInterval(t)
+      } else if (tries > 100) {
+        window.clearInterval(t)
+      }
+    }, 200)
+    return () => window.clearInterval(t)
+  }, [])
   const [bubbles, setBubbles] = useState<BubbleData[]>([])
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
   const [packs, setPacks] = useState<{ id: string; name: string; version: string }[]>([])
@@ -56,12 +80,49 @@ export default function App(): JSX.Element {
       if (!track) return
       bus.emit('trackChange', { name: track.name, artists: track.artists, trial })
     }
+    audioRef.current = eng
     setAudio(eng)
     return () => {
       eng.destroy()
       setAudio(null)
     }
   }, [])
+
+  // 伴唱引擎
+  useEffect(() => {
+    const m = new MicEngine()
+    m.onChange = setMicOn
+    micRef.current = m
+    setMic(m)
+    return () => {
+      m.stop()
+      micRef.current = null
+      setMic(null)
+    }
+  }, [])
+
+  const toggleMic = async (m: MicEngine | null): Promise<void> => {
+    if (!m) return
+    if (m.recording) {
+      m.stop()
+      const text = await m.summary()
+      bus.emit('bubble', makeBubble({ kind: 'comment', text, ttl: 6000 }))
+    } else {
+      const r = await m.start()
+      if (!r.ok) {
+        bus.emit(
+          'bubble',
+          makeBubble({
+            kind: 'say',
+            text: r.error === 'mic-denied' ? '麦克风权限被拒了：系统设置 → 隐私与安全性 → 麦克风，勾选咕咕' : '麦克风启动失败…',
+            ttl: 8000
+          })
+        )
+      } else {
+        bus.emit('bubble', makeBubble({ kind: 'comment', text: '伴奏响起就来！我听着呢🎤', ttl: 4000 }))
+      }
+    }
+  }
 
   useEffect(() => {
     void window.gugu.packsList().then(setPacks)
@@ -141,7 +202,7 @@ export default function App(): JSX.Element {
     <div className="overlay">
       <div ref={hostRef} className="stage" />
       <Bubbles items={bubbles} />
-      <MicOrb />
+      <MicOrb recording={micOn} onClick={() => void toggleMic(mic)} />
       <MiniPlayer engine={audio} />
       {menu && (
         <ContextMenu

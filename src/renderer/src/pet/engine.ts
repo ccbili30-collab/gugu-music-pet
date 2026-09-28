@@ -9,6 +9,14 @@ import { Particles } from './particles'
 import { IdleScheduler, type IdleAction } from './scheduler'
 import { LAYOUT, type SlotName } from './types'
 import { bus, makeBubble } from './bus'
+import { BeatDetector } from './beat'
+
+/** 音频源注入（音乐 analyser + 伴唱麦 电平），由 App 装配 */
+export interface AudioSource {
+  playing(): boolean
+  analyser(): AnalyserNode | null
+  micLevel(): number
+}
 
 interface DragSample {
   t: number
@@ -34,6 +42,9 @@ export class PetEngine {
   private danceEnergy = 0
   private danceUntil = 0
   private hummingUntil = 0
+  private beat = new BeatDetector()
+  private audioSource: AudioSource | null = null
+  private freqData: Uint8Array<ArrayBuffer> | null = null
 
   private dragging = false
   private pointerDownAt = 0
@@ -120,6 +131,8 @@ export class PetEngine {
     })
 
     this.lastTime = performance.now()
+    // 调试钩子（CDP/控制台观察节拍与状态）
+    ;(window as unknown as Record<string, unknown>).__guguEngine = this
     this.loop(this.lastTime)
   }
 
@@ -171,6 +184,11 @@ export class PetEngine {
 
   get isHumming(): boolean {
     return performance.now() < this.hummingUntil
+  }
+
+  setAudioSource(src: AudioSource): void {
+    this.audioSource = src
+    this.beat.onBeat = (strength) => this.motion.beatKick(strength)
   }
 
   private async setupBounds(clampPos = true): Promise<void> {
@@ -390,6 +408,29 @@ export class PetEngine {
     if (dt <= 0) return
 
     const ph = this.physics
+    // ---- 音律驱动：音乐节拍 + 麦克风电平 → 舞蹈能量 ----
+    const src = this.audioSource
+    if (src) {
+      const mic = src.micLevel()
+      const an = src.analyser()
+      if (src.playing() && an) {
+        if (!this.freqData || this.freqData.length !== an.frequencyBinCount) {
+          this.freqData = new Uint8Array(new ArrayBuffer(an.frequencyBinCount))
+        }
+        an.getByteFrequencyData(this.freqData as Uint8Array<ArrayBuffer>)
+        this.beat.update(dt, this.freqData as Uint8Array<ArrayBuffer>, now / 1000)
+        const musicEnergy = Math.max(0, Math.min(1, (this.beat.energy - 0.02) * 3))
+        const level = Math.min(1, musicEnergy + mic * 1.3)
+        if (level > 0.05) {
+          this.danceEnergy = Math.max(this.danceEnergy, 0.35 + level * 0.55)
+          this.danceUntil = Math.max(this.danceUntil, now + 2600)
+        }
+      } else if (mic > 0.05) {
+        // 只伴唱不放歌：随歌声律动
+        this.danceEnergy = Math.max(this.danceEnergy, 0.3 + mic * 0.6)
+        this.danceUntil = Math.max(this.danceUntil, now + 2000)
+      }
+    }
     // 舞蹈能量到期后平滑衰减
     if (performance.now() > this.danceUntil && this.danceEnergy > 0) {
       this.danceEnergy = Math.max(0, this.danceEnergy - dt * 0.5)
@@ -488,7 +529,7 @@ export class PetEngine {
       sleeping: this.sleeping,
       danceEnergy: this.danceEnergy,
       beatPulse: 0,
-      beatPhase: now / 1000 * Math.PI * 2
+      beatPhase: this.beat.beatPhase * Math.PI * 2
     })
     this.motionContainer.scale.set(out.scaleX, out.scaleY)
     this.motionContainer.rotation = out.rotation

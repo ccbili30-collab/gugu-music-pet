@@ -34,5 +34,7 @@ export function registerAgentIpc(): void {
   ipcMain.on('chat:send', (_e, text: string) => {
     void brain.chat(text)
   })
+  ipcMain.handle('sing:pool', () => brain.singPool())
+  ipcMain.handle('sing:summary', (_e, durSec: number) => brain.singSummary(durSec))
   ipcMain.handle('memory:dir', () => join(memoryDir(), '..'))
 }

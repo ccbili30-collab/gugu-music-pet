@@ -5,6 +5,7 @@ import { registerIpc } from './ipc'
 import { registerMusicScheme, handleMusicProtocol } from './music/proxy'
 import { musicService, registerMusicIpc } from './music/service'
 import { startClickThrough } from './clickthrough'
+import { registerAgentIpc } from './agent/ipc'
 
 // music:// 协议必须在 app ready 前注册
 registerMusicScheme()
@@ -26,6 +27,7 @@ if (!gotLock) {
     createPetWindow()
     createTray()
     registerIpc()
+    registerAgentIpc()
     startClickThrough()
 
     musicService.setStateListener((player, login) => {

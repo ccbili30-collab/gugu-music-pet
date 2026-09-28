@@ -142,6 +142,16 @@ export class MusicService {
     }
   }
 
+  /** Agent 工具用：设队列并让渲染层从头播放 */
+  playInRenderer(queue: Track[], startIndex: number): void {
+    this.setQueue(queue, startIndex)
+    for (const win of BrowserWindow.getAllWindows()) {
+      if (win.getTitle() === 'Gugu Pet') {
+        win.webContents.send('music:command', { action: 'playQueue', tracks: queue, startIndex })
+      }
+    }
+  }
+
   // ---- 登录 ----
 
   async createQr(): Promise<{ key: string; qrimg: string }> {
@@ -190,4 +200,6 @@ export function registerMusicIpc(): void {
   ipcMain.handle('music:player:state', () => api.currentState())
   ipcMain.on('music:report', (_e, state: Partial<PlayerState>) => musicService.report(state))
   ipcMain.on('music:queue:set', (_e, queue: Track[], startIndex: number) => musicService.setQueue(queue, startIndex))
+  // 聊天窗歌曲卡片点播 → 设队列并推给宠物窗口播放
+  ipcMain.on('music:play-card', (_e, tracks: Track[], index: number) => musicService.playInRenderer(tracks, index))
 }

@@ -41,8 +41,21 @@ export interface LoginStateInfo {
 }
 
 export interface MusicCommandMsg {
-  action: 'toggle' | 'next' | 'prev' | 'stop' | 'volume' | 'seek' | 'play'
+  action: 'toggle' | 'next' | 'prev' | 'stop' | 'volume' | 'seek' | 'play' | 'playQueue'
   value?: number
+  tracks?: Track[]
+  startIndex?: number
+}
+
+export interface ChatReplyMsg {
+  ok: boolean
+  content: string
+  kaomoji?: string
+}
+
+export interface SongsCardMsg {
+  type: 'songs'
+  tracks: Track[]
 }
 
 export interface GuguApi {
@@ -52,6 +65,8 @@ export interface GuguApi {
   onScreenChanged(cb: () => void): void
   onCommand(cb: (cmd: unknown) => void): void
   packsList(): Promise<{ id: string; name: string; version: string }[]>
+  spawnGet(): Promise<{ x: number; y: number }>
+  spawnSave(x: number, y: number): void
   reportRegions(rects: { x: number; y: number; w: number; h: number }[]): void
   setDragging(d: boolean): void
   openChat(): void
@@ -72,9 +87,21 @@ export interface GuguApi {
     playerState(): Promise<PlayerState>
     report(state: Partial<PlayerState>): void
     queueSet(queue: Track[], startIndex: number): void
+    playCard(tracks: Track[], index: number): void
   }
-  onMusicState(cb: (state: { player: PlayerState; login: LoginStateInfo }) => void): void
-  onMusicCommand(cb: (cmd: MusicCommandMsg) => void): void
+  onMusicState(cb: (state: { player: PlayerState; login: LoginStateInfo }) => void): () => void
+  onMusicCommand(cb: (cmd: MusicCommandMsg) => void): () => void
+  onPetBubble(cb: (msg: { kind: 'say' | 'hum' | 'comment' | 'resonance' | 'invite'; text?: string; kaomoji?: string }) => void): () => void
+  chat: {
+    send(text: string): void
+    history(): Promise<{ role: 'user' | 'assistant'; content: string; ts?: number }[]>
+    clear(): Promise<{ ok: boolean }>
+    configGet(): Promise<{ llm: { baseUrl: string; apiKey: string; model: string; temperature: number }; personaName: string }>
+    configSet(cfg: { llm?: Partial<{ baseUrl: string; apiKey: string; model: string; temperature: number }>; personaName?: string }): Promise<{ ok: boolean }>
+    test(): Promise<{ ok: boolean; error?: string }>
+  }
+  onChatReply(cb: (msg: ChatReplyMsg) => void): () => void
+  onChatCard(cb: (msg: SongsCardMsg) => void): () => void
 }
 
 const api: GuguApi = {
@@ -90,6 +117,8 @@ const api: GuguApi = {
     ipcRenderer.on('pet:command', listener)
   },
   packsList: () => ipcRenderer.invoke('packs:list'),
+  spawnGet: () => ipcRenderer.invoke('pet:spawn:get'),
+  spawnSave: (x, y) => ipcRenderer.send('pet:spawn:save', x, y),
   reportRegions: (rects) => ipcRenderer.send('ui:regions', rects),
   setDragging: (d) => ipcRenderer.send('ui:dragging', d),
   openChat: () => ipcRenderer.send('chat:open'),
@@ -109,15 +138,41 @@ const api: GuguApi = {
     queueGet: () => ipcRenderer.invoke('music:queue:get'),
     playerState: () => ipcRenderer.invoke('music:player:state'),
     report: (state) => ipcRenderer.send('music:report', state),
-    queueSet: (queue, startIndex) => ipcRenderer.send('music:queue:set', queue, startIndex)
+    queueSet: (queue, startIndex) => ipcRenderer.send('music:queue:set', queue, startIndex),
+    playCard: (tracks, index) => ipcRenderer.send('music:play-card', tracks, index)
   },
   onMusicState: (cb) => {
     const listener = (_e: IpcRendererEvent, state: { player: PlayerState; login: LoginStateInfo }): void => cb(state)
     ipcRenderer.on('music:state', listener)
+    return () => ipcRenderer.removeListener('music:state', listener)
   },
   onMusicCommand: (cb) => {
     const listener = (_e: IpcRendererEvent, cmd: MusicCommandMsg): void => cb(cmd)
     ipcRenderer.on('music:command', listener)
+    return () => ipcRenderer.removeListener('music:command', listener)
+  },
+  onPetBubble: (cb) => {
+    const listener = (_e: IpcRendererEvent, msg: Parameters<typeof cb>[0]): void => cb(msg)
+    ipcRenderer.on('pet:bubble', listener)
+    return () => ipcRenderer.removeListener('pet:bubble', listener)
+  },
+  chat: {
+    send: (text) => ipcRenderer.send('chat:send', text),
+    history: () => ipcRenderer.invoke('chat:history'),
+    clear: () => ipcRenderer.invoke('chat:clear'),
+    configGet: () => ipcRenderer.invoke('llm:config:get'),
+    configSet: (cfg) => ipcRenderer.invoke('llm:config:set', cfg),
+    test: () => ipcRenderer.invoke('llm:test')
+  },
+  onChatReply: (cb) => {
+    const listener = (_e: IpcRendererEvent, msg: ChatReplyMsg): void => cb(msg)
+    ipcRenderer.on('chat:reply', listener)
+    return () => ipcRenderer.removeListener('chat:reply', listener)
+  },
+  onChatCard: (cb) => {
+    const listener = (_e: IpcRendererEvent, msg: SongsCardMsg): void => cb(msg)
+    ipcRenderer.on('chat:card', listener)
+    return () => ipcRenderer.removeListener('chat:card', listener)
   }
 }
 

@@ -203,6 +203,13 @@ export class AudioEngine {
       case 'play':
         if (typeof cmd.value === 'number') void this.playAt(cmd.value)
         break
+      case 'playQueue':
+        if (cmd.tracks?.length) {
+          this.queue = cmd.tracks
+          this.index = (cmd.startIndex ?? 0) - 1
+          void this.playAt(cmd.startIndex ?? 0)
+        }
+        break
     }
   }
 

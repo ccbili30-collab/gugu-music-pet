@@ -37,6 +37,17 @@ export default function App(): JSX.Element {
     )
   }, [bubbles.length, menu, hasTrack, packs.length])
 
+  // 主进程 → 宠物气泡（大脑回复/歌评/共鸣/邀请）
+  useEffect(() => {
+    const off = window.gugu.onPetBubble((msg) => {
+      bus.emit(
+        'bubble',
+        makeBubble({ kind: msg.kind, text: msg.text, kaomoji: msg.kaomoji, ttl: msg.kind === 'invite' ? 12000 : 6500 })
+      )
+    })
+    return off
+  }, [])
+
   // 音频引擎（渲染层唯一 <audio>）
   useEffect(() => {
     const eng = new AudioEngine()

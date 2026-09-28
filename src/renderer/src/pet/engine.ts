@@ -8,7 +8,7 @@ import { Physics } from './physics'
 import { Particles } from './particles'
 import { IdleScheduler, type IdleAction } from './scheduler'
 import { LAYOUT, type SlotName } from './types'
-import { bus } from './bus'
+import { bus, makeBubble } from './bus'
 
 interface DragSample {
   t: number
@@ -32,6 +32,8 @@ export class PetEngine {
   private minorAction: { kind: 'peck' | 'stand' | 'sit'; until: number } | null = null
   private facing: 1 | -1 = 1
   private danceEnergy = 0
+  private danceUntil = 0
+  private hummingUntil = 0
 
   private dragging = false
   private pointerDownAt = 0
@@ -44,6 +46,7 @@ export class PetEngine {
   private strokeAccum = 0
   private lastPointer = { x: 0, y: 0 }
   private lastSent = { x: -9999, y: -9999 }
+  private lastSaved = { x: -9999, y: -9999 }
   private lastZzz = 0
   private boundsTimer = 0
   private boundsFetching = false
@@ -85,6 +88,36 @@ export class PetEngine {
     window.gugu.onScreenChanged(() => void this.setupBounds(false))
 
     this.setupInteraction()
+
+    // 大脑/托盘指令：dance/hum/fly/sit/sleep/wake/say
+    window.gugu.onCommand((raw) => {
+      const cmd = raw as { action: string; text?: string }
+      switch (cmd.action) {
+        case 'dance':
+          this.setDance(0.85, 20_000)
+          break
+        case 'hum':
+          this.minorAction = { kind: 'sit', until: performance.now() + 60_000 }
+          this.hummingUntil = performance.now() + 60_000
+          this.animator.play('hum', true)
+          break
+        case 'fly':
+          this.flyAround()
+          break
+        case 'sit':
+          this.minorAction = { kind: 'sit', until: performance.now() + 45_000 }
+          break
+        case 'sleep':
+          this.sleep()
+          break
+        case 'wake':
+          this.wake()
+          break
+        case 'say':
+          bus.emit('bubble', makeBubble({ kind: 'say', text: cmd.text, ttl: 6000 }))
+          break
+      }
+    })
 
     this.lastTime = performance.now()
     this.loop(this.lastTime)
@@ -129,6 +162,17 @@ export class PetEngine {
 
   // ---- 屏幕边界 ----
 
+  /** M5 节拍驱动入口；指令也可临时设一个舞蹈强度 */
+  setDance(energy: number, durationMs: number): void {
+    this.danceEnergy = energy
+    this.danceUntil = performance.now() + durationMs
+    this.minorAction = null
+  }
+
+  get isHumming(): boolean {
+    return performance.now() < this.hummingUntil
+  }
+
   private async setupBounds(clampPos = true): Promise<void> {
     if (this.boundsFetching) return
     this.boundsFetching = true
@@ -138,7 +182,9 @@ export class PetEngine {
       const si = await window.gugu.screenInfo(clampPos ? sx : this.physics.x, clampPos ? sy : this.physics.y)
       if (clampPos) {
         this.physics.setWorkArea(si.workArea)
-        this.physics.x = si.workArea.x + si.workArea.width * 0.5
+        // 出生点：上次的落点（没有则主进程给角落默认值），并夹回工作区
+        const spawn = await window.gugu.spawnGet()
+        this.physics.x = Math.min(Math.max(spawn.x, this.physics.leftWall), this.physics.rightWall)
         this.physics.y = this.physics.floorY
       } else {
         this.physics.setWorkArea(si.workArea)
@@ -344,8 +390,12 @@ export class PetEngine {
     if (dt <= 0) return
 
     const ph = this.physics
+    // 舞蹈能量到期后平滑衰减
+    if (performance.now() > this.danceUntil && this.danceEnergy > 0) {
+      this.danceEnergy = Math.max(0, this.danceEnergy - dt * 0.5)
+    }
     const isIdle =
-      !ph.airborne && !this.walking && !this.sleeping && !this.minorAction && this.danceEnergy < 0.01
+      !ph.airborne && !this.walking && !this.sleeping && !this.minorAction && this.danceEnergy < 0.01 && !this.isHumming
     this.scheduler.tick(now, isIdle, ph)
 
     // 小动作到期
@@ -388,11 +438,19 @@ export class PetEngine {
       this.particles.zzz(LAYOUT.anchorX - 40, LAYOUT.anchorY - 30)
     }
 
-    // 定期检查是否跨屏
+    // 定期检查是否跨屏 + 保存落点（下次启动还在老地方）
     this.boundsTimer += dt
-    if (this.boundsTimer > 1.5) {
+    if (this.boundsTimer > 4) {
       this.boundsTimer = 0
       if (ph.airborne && Math.hypot(ph.vx, ph.vy) > 500) void this.refreshBoundsIfCrossed()
+      if (!ph.airborne) {
+        const rx2 = Math.round(ph.x)
+        const ry2 = Math.round(ph.y)
+        if (Math.abs(rx2 - this.lastSaved.x) > 40 || Math.abs(ry2 - this.lastSaved.y) > 40) {
+          this.lastSaved = { x: rx2, y: ry2 }
+          window.gugu.spawnSave(rx2, ry2)
+        }
+      }
     }
 
     // ---- 动画槽位选择 ----
@@ -400,6 +458,7 @@ export class PetEngine {
     if (this.dragging) slot = this.facing === 1 ? 'fly_right' : 'fly_left'
     else if (ph.airborne) slot = this.facing === 1 ? 'fly_right' : 'fly_left'
     else if (this.sleeping) slot = 'sleep'
+    else if (this.isHumming) slot = 'hum'
     else if (this.walking) slot = this.facing === 1 ? 'walk_right' : 'walk_left'
     else if (this.minorAction?.kind === 'peck') slot = 'peck'
     else if (this.minorAction?.kind === 'sit') slot = 'sit'

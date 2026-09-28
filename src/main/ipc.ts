@@ -2,6 +2,7 @@ import { ipcMain, screen, app } from 'electron'
 import { getPetWindow, createChatWindow, createLoginWindow, PET_WINDOW, setAppQuitting } from './windows'
 import { registerPacksIpc } from './packs'
 import { setRegions, setDragging } from './clickthrough'
+import { registerSpawnIpc } from './spawn'
 
 export interface PetEventPayload {
   [key: string]: unknown
@@ -9,6 +10,7 @@ export interface PetEventPayload {
 
 export function registerIpc(): void {
   registerPacksIpc()
+  registerSpawnIpc()
   // 渲染进程物理循环 → 移动宠物窗口（坐标为宠物脚底点的屏幕坐标）
   ipcMain.on('pet:move', (_e, x: number, y: number) => {
     const win = getPetWindow()
@@ -25,10 +27,12 @@ export function registerIpc(): void {
     return { id: display.id, workArea: display.workArea }
   })
 
-  // 宠物侧事件（点击/抚摸/投掷/落地…），M4 接入大脑
+  // 宠物侧事件（点击/抚摸/投掷/落地…）→ 大脑驱动力 + 反射层
   ipcMain.on('pet:event', (_e, name: string, payload: PetEventPayload) => {
-    // eslint-disable-next-line no-console
-    console.log(`[pet:event] ${name}`, payload ?? '')
+    void import('./agent/brain').then(({ brain }) => brain.petEvent(name))
+    if (name === 'fling' || name === 'land') {
+      console.log(`[pet:event] ${name}`, payload ?? '')
+    }
   })
 
   ipcMain.on('chat:open', () => createChatWindow())

@@ -12,6 +12,7 @@ export type BusEvents = {
   menu: { x: number; y: number }
   closeMenu: undefined
   openChat: undefined
+  pack: { id: string }
 }
 
 type Handler<K extends keyof BusEvents> = (payload: BusEvents[K]) => void

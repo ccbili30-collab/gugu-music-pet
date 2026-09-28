@@ -11,6 +11,14 @@ export default function App(): JSX.Element {
   const engineRef = useRef<PetEngine | null>(null)
   const [bubbles, setBubbles] = useState<BubbleData[]>([])
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
+  const [packs, setPacks] = useState<{ id: string; name: string; version: string }[]>([])
+  const [currentPack, setCurrentPack] = useState('pigeon')
+
+  useEffect(() => {
+    void window.gugu.packsList().then(setPacks)
+    const offPack = bus.on('pack', ({ id }) => setCurrentPack(id))
+    return offPack
+  }, [])
 
   useEffect(() => {
     let disposed = false
@@ -55,6 +63,12 @@ export default function App(): JSX.Element {
     engineRef.current?.isSleeping
       ? { label: '☀️ 叫醒咕咕', onClick: () => engineRef.current?.wake() }
       : { label: '😴 睡觉', onClick: () => engineRef.current?.sleep() },
+    ...(packs.length > 1
+      ? packs.map((p) => ({
+          label: `${p.id === currentPack ? '●' : '○'} 换成 ${p.name}`,
+          onClick: () => void engineRef.current?.switchPack(p.id)
+        }))
+      : []),
     { label: '⚙️ 设置（即将上线）', disabled: true, onClick: () => {} },
     { label: '🚪 再见', onClick: () => window.gugu.quit() }
   ]

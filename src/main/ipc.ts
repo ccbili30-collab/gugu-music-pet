@@ -1,11 +1,13 @@
 import { ipcMain, screen, app } from 'electron'
 import { getPetWindow, createChatWindow, PET_WINDOW, setAppQuitting } from './windows'
+import { registerPacksIpc } from './packs'
 
 export interface PetEventPayload {
   [key: string]: unknown
 }
 
 export function registerIpc(): void {
+  registerPacksIpc()
   // 渲染进程物理循环 → 移动宠物窗口（坐标为宠物脚底点的屏幕坐标）
   ipcMain.on('pet:move', (_e, x: number, y: number) => {
     const win = getPetWindow()

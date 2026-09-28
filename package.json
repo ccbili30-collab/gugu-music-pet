@@ -10,7 +10,7 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
-    "bake": "node scripts/bake-pigeon.mjs"
+    "bake": "node scripts/bake-packs.mjs"
   },
   "dependencies": {
     "pixi.js": "^8.6.0",

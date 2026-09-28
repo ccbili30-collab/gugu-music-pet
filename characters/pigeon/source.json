@@ -1,7 +1,8 @@
 {
-  "width": 16,
-  "height": 16,
-  "transparent": ".",
+  "id": "pigeon",
+  "name": "咕咕",
+  "version": "1.0.0",
+  "author": "gugu legacy revival",
   "palette": {
     "B": "#909090",
     "D": "#707070",
@@ -12,6 +13,9 @@
     "O": "#FF6600",
     "L": "#FF8C00",
     "T": "#B0B0C0"
+  },
+  "sprite": {
+    "scale": 6
   },
   "frames": {
     "idle1": [
@@ -284,5 +288,81 @@
       "................",
       "................"
     ]
+  },
+  "slots": {
+    "idle": {
+      "frames": [
+        "idle1",
+        "idle2"
+      ],
+      "fps": 2
+    },
+    "stand": {
+      "frames": [
+        "stand1",
+        "stand2"
+      ],
+      "fps": 1.5
+    },
+    "walk_right": {
+      "frames": [
+        "walk_right1",
+        "walk_right2"
+      ],
+      "fps": 6
+    },
+    "walk_left": {
+      "frames": [
+        "walk_left1",
+        "walk_left2"
+      ],
+      "fps": 6
+    },
+    "fly_right": {
+      "frames": [
+        "fly_right1",
+        "fly_right2"
+      ],
+      "fps": 10
+    },
+    "fly_left": {
+      "frames": [
+        "fly_left1",
+        "fly_left2"
+      ],
+      "fps": 10
+    },
+    "sit": {
+      "frames": [
+        "sit"
+      ],
+      "fps": 1
+    },
+    "sleep": {
+      "frames": [
+        "sleep"
+      ],
+      "fps": 1
+    },
+    "peck": {
+      "frames": [
+        "peck",
+        "stand1"
+      ],
+      "fps": 2
+    },
+    "hum": {
+      "frames": [
+        "sit",
+        "sleep"
+      ],
+      "fps": 0.4
+    }
+  },
+  "fallbacks": {
+    "dance": "idle",
+    "happy": "idle",
+    "hurt": "idle",
+    "drag": "fly_right"
   }
 }

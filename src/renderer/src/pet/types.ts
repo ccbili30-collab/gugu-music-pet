@@ -15,9 +15,17 @@ export type SlotName =
   | 'drag'
 
 export interface PackSlot {
-  frames: string[]
-  fps: number
-  loop: boolean
+  frames?: string[]
+  /** 复用另一槽位的帧并水平镜像（如 walk_left = mirrorOf walk_right） */
+  mirrorOf?: string
+  fps?: number
+  loop?: boolean
+}
+
+export interface PackInfo {
+  id: string
+  name: string
+  version: string
 }
 
 export interface PackFrameInfo {

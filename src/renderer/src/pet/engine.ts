@@ -45,6 +45,7 @@ export class PetEngine {
   private lastZzz = 0
   private boundsTimer = 0
   private boundsFetching = false
+  private windowListenersBound = false
   private lastTime = 0
   private raf = 0
 
@@ -67,21 +68,12 @@ export class PetEngine {
     host.appendChild(this.app.canvas)
     this.app.stage.eventMode = 'static'
 
-    this.loaded = await loadPack('pigeon')
-    const { textures, frameSize } = this.loaded
-
     this.motionContainer = new Container()
     this.motionContainer.position.set(LAYOUT.anchorX, LAYOUT.anchorY)
     this.app.stage.addChild(this.motionContainer)
 
-    this.sprite = new Sprite(textures.values().next().value as Texture)
-    this.sprite.anchor.set(0.5, 1)
-    this.sprite.scale.set(this.loaded.scale)
-    this.sprite.eventMode = 'static'
-    this.sprite.hitArea = new Rectangle(0, 0, frameSize[0], frameSize[1])
-    this.sprite.cursor = 'grab'
-    this.motionContainer.addChild(this.sprite)
-
+    this.loaded = await loadPack('pigeon')
+    this.buildSprite()
     this.particles = new Particles(this.app)
     this.animator = new Animator(this.loaded)
 
@@ -94,6 +86,43 @@ export class PetEngine {
 
     this.lastTime = performance.now()
     this.loop(this.lastTime)
+  }
+
+  private buildSprite(): void {
+    const { textures, frameSize } = this.loaded
+    if (this.sprite) this.sprite.destroy()
+    this.sprite = new Sprite(textures.values().next().value as Texture)
+    this.sprite.anchor.set(0.5, 1)
+    this.sprite.scale.set(this.loaded.scale)
+    this.sprite.eventMode = 'static'
+    this.sprite.hitArea = new Rectangle(0, 0, frameSize[0], frameSize[1])
+    this.sprite.cursor = 'grab'
+    this.motionContainer.addChild(this.sprite)
+    // 交互挂到新 sprite 上
+    this.setupInteraction()
+  }
+
+  /** 热切换角色包 */
+  async switchPack(id: string): Promise<boolean> {
+    if (id === this.currentPackId) return true
+    try {
+      this.loaded = await loadPack(id)
+      this.buildSprite()
+      this.animator = new Animator(this.loaded)
+      this.currentPackIdVal = id
+      this.motion.kickSquash(0.7)
+      bus.emit('pack', { id })
+      return true
+    } catch (err) {
+      console.error('switchPack failed:', err)
+      return false
+    }
+  }
+
+  private currentPackIdVal = 'pigeon'
+
+  get currentPackId(): string {
+    return this.currentPackIdVal
   }
 
   // ---- 屏幕边界 ----
@@ -189,6 +218,9 @@ export class PetEngine {
       const client = e.client
       bus.emit('menu', { x: client.x, y: client.y })
     })
+
+    if (this.windowListenersBound) return
+    this.windowListenersBound = true
 
     window.addEventListener('pointermove', (e) => {
       if (this.pointerDownAt === 0) return
@@ -372,13 +404,17 @@ export class PetEngine {
     this.animator.play(slot)
     this.animator.update(dt)
 
-    // 帧贴图 + 脚底锚点
+    // 帧贴图 + 脚底锚点 + 镜像翻转
     const frameName = this.animator.currentFrame
     const tex = this.loaded.textures.get(frameName)
     if (tex && this.sprite.texture !== tex) this.sprite.texture = tex
     const info = this.loaded.frameInfo.get(frameName)
     const [, fh] = this.loaded.frameSize
     if (info) this.sprite.anchor.set(0.5, (info.groundRow + 1) / fh)
+    this.sprite.scale.set(
+      (this.animator.isFlipped ? -1 : 1) * this.loaded.scale,
+      this.loaded.scale
+    )
 
     // ---- 变换律动层 ----
     const out = this.motion.update(dt, {

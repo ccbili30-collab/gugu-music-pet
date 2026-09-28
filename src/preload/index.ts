@@ -11,6 +11,7 @@ export interface GuguApi {
   screenInfo(x: number, y: number): Promise<ScreenInfo>
   onScreenChanged(cb: () => void): void
   onCommand(cb: (cmd: unknown) => void): void
+  packsList(): Promise<{ id: string; name: string; version: string }[]>
   openChat(): void
   quit(): void
 }
@@ -27,6 +28,7 @@ const api: GuguApi = {
     const listener = (_e: IpcRendererEvent, cmd: unknown): void => cb(cmd)
     ipcRenderer.on('pet:command', listener)
   },
+  packsList: () => ipcRenderer.invoke('packs:list'),
   openChat: () => ipcRenderer.send('chat:open'),
   quit: () => ipcRenderer.send('app:quit')
 }

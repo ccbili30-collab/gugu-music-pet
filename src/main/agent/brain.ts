@@ -87,6 +87,9 @@ export class Brain {
   petEvent(name: string): void {
     this.drives.impact(name)
     this.activityUntil = Date.now() + 30_000
+    if (name === 'click') {
+      void import('./scenes').then(({ sceneEngine }) => sceneEngine.onPetClick())
+    }
     // 反射层：只给颜文字，不说台词
     if (name === 'stroke') {
       const pool = ['(´,,•ω•,,)♡', '(๑>◡<๑)', '(っ´▽`)っ', '♡(˃͈ દ ˂͈ ༶ )']

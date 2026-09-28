@@ -14,6 +14,7 @@ export class AudioEngine {
   private actx: AudioContext | null = null
   private analyser: AnalyserNode | null = null
   private reportTimer = 0
+  private lastErrorTrackId = 0
 
   /** 播放失败等需要气泡反馈的事件 */
   onError: ((msg: string) => void) | null = null
@@ -27,7 +28,14 @@ export class AudioEngine {
     this.el.addEventListener('play', () => this.report())
     this.el.addEventListener('pause', () => this.report())
     this.el.addEventListener('error', () => {
-      if (this.track) this.onError?.('这首歌的音频流出问题了，换一首试试…')
+      if (!this.track) return
+      if (this.lastErrorTrackId === this.track.id) {
+        this.onError?.('这首歌的音频流出问题了，换一首试试…')
+        return
+      }
+      // 403/解码失败：静默跳下一首（每首歌只自动跳一次）
+      this.lastErrorTrackId = this.track.id
+      this.next(true)
     })
     window.gugu.onMusicCommand((cmd) => this.handleCommand(cmd))
     this.reportTimer = window.setInterval(() => {
@@ -53,6 +61,30 @@ export class AudioEngine {
     return this.analyser
   }
 
+  /**
+   * 静音但不影响节拍分析：analyser 保持接在源上（照常取频谱），
+   * 只断开 → 扬声器的那一段。音频图未建立时退化为 el.muted。
+   */
+  setMuted(muted: boolean): void {
+    this.muted = muted
+    if (this.analyser) {
+      try {
+        this.analyser.disconnect()
+        if (!muted) this.analyser.connect(this.actx?.destination as AudioNode)
+      } catch {
+        /* 忽略 */
+      }
+    } else {
+      this.el.muted = muted
+    }
+  }
+
+  get isMuted(): boolean {
+    return this.muted
+  }
+
+  private muted = false
+
   private ensureGraph(): void {
     if (this.actx) {
       if (this.actx.state === 'suspended') void this.actx.resume()
@@ -66,6 +98,14 @@ export class AudioEngine {
       this.analyser.smoothingTimeConstant = 0.5
       src.connect(this.analyser)
       this.analyser.connect(this.actx.destination)
+      if (this.muted) {
+        // 建图时已处于静音模式（自动化测试）
+        try {
+          this.analyser.disconnect()
+        } catch {
+          /* 忽略 */
+        }
+      }
     } catch (e) {
       console.error('audio graph init failed', e)
     }

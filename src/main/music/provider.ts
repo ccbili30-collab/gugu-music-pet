@@ -55,6 +55,19 @@ function pickCookie(res: { cookie?: unknown; body?: { cookie?: unknown } }): str
   return typeof c === 'string' ? c : ''
 }
 
+/** CDN 链接可用性探测（Range: bytes=0-1，失败重取可救活过期签名） */
+async function urlPlayable(url: string): Promise<boolean> {
+  try {
+    const res = await fetch(url, {
+      headers: { Range: 'bytes=0-1', 'User-Agent': 'Mozilla/5.0', Referer: 'https://music.163.com/' },
+      signal: AbortSignal.timeout(8000)
+    })
+    return res.status === 200 || res.status === 206
+  } catch {
+    return false
+  }
+}
+
 function toTrack(s: {
   id: number
   name: string
@@ -135,18 +148,23 @@ export class NetEaseProvider {
     return (res.body?.songs ?? []).map(toTrack)
   }
 
-  /** 取播放链接。trial=true 表示 VIP 歌只给了试听片段 */
+  /** 取播放链接。trial=true 表示 VIP 歌只给了试听片段；URL 会先验证可用（403 自动重取一次） */
   async songUrl(
     id: number,
     cookie = ''
   ): Promise<{ url: string | null; br: number; trial: boolean }> {
-    const res = await song_url_v1({ id, level: 'exhigh', cookie: cookie || undefined })
-    const d = res.body?.data?.[0]
-    return {
-      url: d?.url ?? null,
-      br: d?.br ?? 0,
-      trial: !!d?.freeTrialInfo
+    const fetchOnce = async (): Promise<{ url: string | null; br: number; trial: boolean }> => {
+      const res = await song_url_v1({ id, level: 'exhigh', cookie: cookie || undefined })
+      const d = res.body?.data?.[0]
+      return { url: d?.url ?? null, br: d?.br ?? 0, trial: !!d?.freeTrialInfo }
     }
+    let r = await fetchOnce()
+    if (r.url && !(await urlPlayable(r.url))) {
+      // CDN 签名过期等情况：重新取一次新链接
+      r = await fetchOnce()
+      if (!r.url || !(await urlPlayable(r.url))) return { url: null, br: 0, trial: r.trial }
+    }
+    return r
   }
 
   async hotComments(id: number, limit = 10, cookie = ''): Promise<Comment[]> {

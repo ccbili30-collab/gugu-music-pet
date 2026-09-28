@@ -85,6 +85,142 @@ body {
   opacity: 0.85;
 }
 
+.invite-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.invite-btn {
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.invite-btn.accept {
+  background: #ffd98a;
+  color: #4a3b12;
+  font-weight: 600;
+}
+
+.invite-btn.decline {
+  background: rgba(255, 255, 255, 0.12);
+  color: #cfcfd8;
+}
+
+/* ---------- emo 氛围 ---------- */
+.emo-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 75%, rgba(30, 34, 66, 0) 30%, rgba(24, 27, 54, 0.34) 100%);
+  animation: vignette-in 3s ease-out;
+}
+
+@keyframes vignette-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ---------- 左侧热评卡 ---------- */
+.hot-comments {
+  position: absolute;
+  width: 184px;
+  background: rgba(38, 38, 44, 0.92);
+  border-radius: 14px;
+  padding: 8px;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(8px);
+  animation: bubble-in 0.25s ease-out;
+}
+
+.hc-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 4px 6px;
+}
+
+.hc-title {
+  font-size: 11px;
+  color: #ffd98a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+.hc-close {
+  border: none;
+  background: transparent;
+  color: #a8a8b3;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.hc-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 10px;
+  min-height: 92px;
+  animation: bubble-in 0.35s ease-out;
+}
+
+.hc-empty-card {
+  color: #8f8f9a;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hc-content {
+  color: #eceef2;
+  font-size: 12px;
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.hc-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 10px;
+  color: #a8a8b3;
+}
+
+.hc-liked {
+  color: #f28383;
+}
+
+.hc-dots {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  margin-top: 6px;
+}
+
+.hc-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.hc-dot.on {
+  background: #ffd98a;
+}
+
 @keyframes bubble-in {
   from {
     opacity: 0;

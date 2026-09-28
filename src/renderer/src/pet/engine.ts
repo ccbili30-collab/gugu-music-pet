@@ -124,6 +124,20 @@ export class PetEngine {
         case 'wake':
           this.wake()
           break
+        case 'corner': {
+          // 走到最近的屏幕角落（emo 场景用）
+          const ph2 = this.physics
+          const leftDist = Math.abs(ph2.x - ph2.leftWall)
+          const rightDist = Math.abs(ph2.x - ph2.rightWall)
+          const target = leftDist < rightDist ? ph2.leftWall + 24 : ph2.rightWall - 24
+          this.walkTo(target)
+          window.setTimeout(() => {
+            if (!this.physics.airborne) {
+              this.minorAction = { kind: 'sit', until: performance.now() + 600_000 }
+            }
+          }, 3500)
+          break
+        }
         case 'say':
           bus.emit('bubble', makeBubble({ kind: 'say', text: cmd.text, ttl: 6000 }))
           break

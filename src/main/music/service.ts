@@ -126,11 +126,18 @@ export class MusicService {
   }
 
   report(state: Partial<PlayerState>): void {
+    const prevTrackId = this.player.track?.id
     this.player = { ...this.player, ...state }
     if (this.player.track) {
       this.player.queueCount = this.queue.length
     }
     this.fireState()
+    // 换歌 → 场景引擎（AI 歌评/emo 维护），避免 import 环用动态加载
+    if (state.track && state.track.id !== prevTrackId && prevTrackId !== undefined) {
+      void import('../agent/scenes').then(({ sceneEngine }) => {
+        void sceneEngine.onTrackChange(state.track as { id: number; name: string; artists: string }, sceneEngine.mode !== 'emo')
+      })
+    }
   }
 
   command(action: string, value?: number): void {

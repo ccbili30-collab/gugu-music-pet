@@ -106,6 +106,10 @@ export interface GuguApi {
     pool(): Promise<string[]>
     summary(durSec: number): Promise<string>
   }
+  onSceneState(cb: (msg: { mode: 'normal' | 'emo' | 'listening'; reason?: string }) => void): () => void
+  sceneAccept(): void
+  sceneDecline(): void
+  sceneForceEmo(): Promise<void>
 }
 
 const api: GuguApi = {
@@ -181,7 +185,15 @@ const api: GuguApi = {
   sing: {
     pool: () => ipcRenderer.invoke('sing:pool'),
     summary: (durSec) => ipcRenderer.invoke('sing:summary', durSec)
-  }
+  },
+  onSceneState: (cb) => {
+    const listener = (_e: IpcRendererEvent, msg: { mode: 'normal' | 'emo' | 'listening'; reason?: string }): void => cb(msg)
+    ipcRenderer.on('scene:state', listener)
+    return () => ipcRenderer.removeListener('scene:state', listener)
+  },
+  sceneAccept: () => ipcRenderer.send('scene:accept'),
+  sceneDecline: () => ipcRenderer.send('scene:decline'),
+  sceneForceEmo: () => ipcRenderer.invoke('scene:force-emo')
 }
 
 contextBridge.exposeInMainWorld('gugu', api)

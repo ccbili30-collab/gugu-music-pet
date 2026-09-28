@@ -1,0 +1,116 @@
+# gugu-music-pet 任务交接文档
+
+> 更新时间：2026-09-28 · 交接原因：切换开发电脑 · 项目进度：M1–M6 完成，M7 待做
+
+## 这是什么项目
+
+把 GitHub 上的老项目 `gugu-desktop-pet`（Python/tkinter/Windows 桌面鸽子）复活改造成 **macOS 音乐桌宠**：会聊天、懂音乐、能随音律舞动。参考旧仓库 `/Users/noven/bisai/music pet/gugu-desktop-pet`（旧项目仍在 GitHub 上， brains 的提示词/驱动力/记忆格式都已移植进本项目）。
+
+核心概念：**交互桌宠 + 音乐 Agent（模仿汽水音乐小精灵）+ 随音律舞动 + 特殊场景（雨天/深夜 pet 自己听 EMO 歌哼歌共鸣）**。
+
+## 新机器快速开始
+
+```bash
+# 1. Node >= 22（没有的话用国内镜像装，或 brew install node）
+# 2. 克隆 + 安装（.npmrc 已配 npmmirror + electron 国内镜像，无需额外配置）
+git clone <本仓库地址>
+cd gugu-music-pet
+npm install
+npm run bake     # 烘焙角色包（characters/*/source.json → 精灵图+pack.json）
+npm run dev      # 启动（鸽子会出现在屏幕角落）
+```
+
+常用命令：`npm run typecheck` · `npm run build` · `node scripts/testing/mock-llm.mjs`（本地 mock LLM 服务器，端口 8787）
+
+**首次使用配置**：双击宠物 → 聊天窗右上角 ⚙️ 填 LLM（任意 OpenAI 兼容：DeepSeek/GLM/Qwen 的 base_url + key + model）→ 测试连接。网易云登录：托盘菜单「扫码登录网易云」（不登录也能搜歌放非 VIP 曲目）。
+
+## 里程碑状态（M1–M6 已完成并验证）
+
+| 里程碑 | 状态 | 验证方式 |
+|---|---|---|
+| M1 骨架与身体 | ✅ | electron-vite + 透明置顶窗 + 鸽子帧动画 + 变换律动层 + 物理/拖拽投掷 |
+| M2 角色包系统 | ✅ | `npm run bake` 通用烘焙器 + 小鸡「皮蛋」+ mirrorOf 镜像槽位 + 右键菜单热切换 |
+| M3 音乐后台 | ✅ | **真实网络验证**：搜索/取链(320k)/热评/歌词/推荐/QR登录全通；`music://` 流代理 200 |
+| M4 Agent 大脑 | ✅ | **mock LLM 端到端验证**：tool-calling→搜索→播放→气泡/歌曲卡片全链路跑通 |
+| M5 音律与伴唱 | ✅ | **实测 BPM 113/114**（Dynamite），danceEnergy 0.70 宠物随节拍跳舞；伴唱引擎+夸夸池完成 |
+| M6 场景与卡片 | ✅ | emo 场景验证：角落+hun 动画+音量 0.35+氛围；CDN 403 已修（resolve 预检+重取）；哼歌/共鸣/邀请/热评卡完成 |
+| M7 收尾 | ⬜ 待做 | 见下文 |
+
+## M7 待办清单（下一台电脑的工作）
+
+1. **设置面板**：目前 LLM 配置藏在聊天窗 ⚙️，需要整合成正式设置窗（LLM/天气城市 `src/main/weather.ts` 的 setCity/音量默认值/角色包选择）。天气城市存 `userData/weather.json`。
+2. **vitest 单测**：物理积分器（`src/renderer/src/pet/physics.ts`）、节拍检测（`beat.ts`，可喂合成频谱数据）、驱动力漂移（`src/main/agent/drives.ts`）。
+3. **electron-builder 打 dmg**：`out/` 产物 + `build/` 图标已有。**必须**：mac entitlements 声明麦克风权限（`NSMicrophoneUsageDescription`，伴唱功能需要）；打包后角色包路径逻辑见 `src/main/packs.ts`（dev 用 `src/renderer/public/characters`，打包用 `out/renderer/characters`，打包时要把 characters 复制进 asar 或 extraResources 并对齐路径）。
+4. **README**：面向比赛评委的介绍 + GIF 演示 + 下载安装。
+5. （可选）LLM 流式输出：`src/main/agent/llm.ts` 目前非流式，加 SSE 流式体验更好。
+6. （可选）骨骼角色：`pack.json` 的 `type` 字段已预留 `"spine"`，加载器在 `src/renderer/src/pet/pack.ts` 抛错占位。本期决定不做。
+
+## 架构速览
+
+```
+主进程 (src/main)
+  index.ts          app 生命周期/窗口/托盘/单实例；music:// 协议注册
+  windows.ts        宠物窗(透明置顶 560x420,锚点 250,316)/聊天窗/登录窗
+  clickthrough.ts   ★macOS 透明窗点击穿透：40ms 轮询光标 vs 渲染层上报的交互区域
+  spawn.ts          出生点=屏幕角落+落点记忆(userData/pet-pos.json)
+  tray.ts           动态菜单：当前歌/播放控制/登录/退出
+  music/provider.ts NetEase API 封装（取链带 403 预检+重取）
+  music/proxy.ts    music:// 流代理(undici fetch，解决 CORS 喂 AnalyserNode)
+  music/service.ts  登录态持久化/队列/状态广播；换歌钩子→场景引擎
+  agent/brain.ts    会话编排：tool-calling 循环(≤4轮)+记忆提取+驱动力+自主性+反射
+  agent/prompt.ts   全部提示词（T 人格移植+音乐伙伴+歌评/共鸣/夸夸池）
+  agent/scenes.ts   ★场景引擎：雨天晚间/深夜→emo；哼歌(歌词片段)/纯共鸣/邀请
+  agent/memory.ts   Markdown 记忆（兼容旧项目 memory/ 格式，可拷贝迁移）
+  agent/drives.ts   四维驱动力（能量/社交/好奇/安逸，节奏调慢）
+  weather.ts        Open-Meteo 免 key（城市可在 userData/weather.json 改）
+  store.ts          config/chat-history/memory 目录管理
+
+渲染层 (src/renderer, pet.html 是主入口)
+  pet/engine.ts     ★引擎：Pixi 舞台+物理循环+槽位动画+交互+指令通道；调试钩子 window.__guguEngine
+  pet/audio.ts      ★唯一 <audio>：取链播放+队列+Web Audio 图；setMuted() 静音不影响分析；钩子 window.__guguAudio
+  pet/beat.ts       ★节拍检测：低频 flux+onset+BPM（实测准）
+  pet/motion.ts     变换律动层：呼吸/squash&stretch/空中拉伸/走路颠簸/节拍弹跳摇摆
+  pet/mic.ts        伴唱：getUserMedia+电平事件+夸夸池（LLM 或内置兜底）
+  pet/regions.ts    交互区域计算（喂给主进程做点击穿透）
+  overlay/*         气泡(右)/迷你播放器(头顶)/话筒圆球(右侧)/热评卡(左)/右键菜单
+  chat/ChatApp.tsx  聊天窗：消息流/歌曲卡片点播/快捷chips/LLM设置
+  login/LoginApp.tsx QR 扫码登录
+
+角色包 (characters/*/source.json → npm run bake → src/renderer/public/characters/<id>/)
+  pigeon 咕咕(15帧) · chick 皮蛋(8帧, walk_left/fly_left 用 mirrorOf 镜像)
+  槽位词汇表：idle/stand/walk_*/fly_*/sit/sleep/peck/hum + fallbacks(dance→idle 等)
+```
+
+数据流：托盘/场景引擎 → 主进程 `music:command`/`pet:command` → 宠物窗引擎执行；引擎/音频 → `music:report`/`pet:event` → 主进程（大脑驱动力、场景钩子）→ 需要时回推 `pet:bubble`/`chat:reply`。所有跨窗口广播走 `music:state`。
+
+## 关键决策记录（别推翻，有原因的）
+
+- **两层动效模型（v1 定稿）**：帧动画 + 精灵整体变换（拉伸/挤压/摇摆），不做骨骼不做局部变形。变换层与帧层正交，任何角色包直接吃律动。
+- **点击穿透**：macOS Electron 透明窗默认吞整窗事件，靠主进程轮询光标+区域上报切换 `setIgnoreMouseEvents`；拖拽中强制不穿透。
+- **音频必须走 `music://` 代理**：直接喂网易云 CDN 会有 CORS，AnalyserNode 会拿到静音。代理用 undici 的 global fetch（net.fetch 会 ERR_BLOCKED_BY_CLIENT）。
+- **消灭无效动态**：只留一个大脑调度器（自主动作 2–5 分钟一次）；旧项目 1–2 秒随机走路、canned 台词、"social bother" 全部没移植。闲时活力=呼吸/眨眼变换层。
+- **emo 自听不评歌**：场景引擎 mode==='emo' 时 onTrackChange 直接 return，只发哼歌（歌词 API 取当前句）和纯共鸣（"呜呜呜"式）；接受邀请后 mode='listening' 恢复 40% 概率 AI 歌评。
+- **LLM 没配置也要能跑**：歌评/共鸣/夸夸池都有内置兜底文案；agent 工具链不依赖 LLM 可用性。
+- **安静自主性**：autonomy 冷却 120–300s，能量 <0.12 自动睡觉、>0.6 醒。
+
+## 已知坑（新机器排查优先看这里）
+
+- **CSP**：三个 html 都有 CSP meta。pixi 需要 `import 'pixi.js/unsafe-eval'`（已加）+ `worker-src 'self' blob:`（已加）。改 CSP 前先跑起来看 console。
+- **CDN 403**：网易 CDN 签名链接偶尔 403，`provider.songUrl` 已做 Range 预检+重取一次；音频 error 事件自动跳下一首（每首限一次）。
+- **网络**：国内直连 npm/github 会超时，.npmrc 已配镜像；gh push 若超时多重试。
+- **测试时别外放音乐**：所有自动化验证先执行 `window.__guguAudio.setMuted(true)`（静音但节拍分析照常）。CDP 调试：`npx electron-vite dev -- --remote-debugging-port=9222`，然后跑 `scripts/testing/*.mjs`（先起 `mock-llm.mjs`）。
+- **内存里的会话上下文**：重启后聊天历史从 userData/chat-history.json 恢复可见消息（工具调用细节不恢复）。
+
+## 比赛演示动线（可直接照着演）
+
+1. 鸽子在角落待着 → 拖起来扔出去，弹墙、落地挤压（物理+动效）
+2. 右键 → 「随机来一首」→ 头顶出现迷你播放器，**鸽子随节拍跳舞**（BPM 检测）
+3. 双击 → 聊天窗：「来点适合写代码的歌」→ 歌曲卡片 → 点卡片直接播（LLM 需先配好）
+4. 右侧话筒圆球 → 跟唱，AI 夸夸弹幕；点击宠物摸头出爱心+颜文字
+5. 右键 → 「演示：雨夜EMO」→ 宠物走到角落自听 EMO 歌单、♪哼歌气泡、纯共鸣不评歌、音量变小+氛围变暗 → 点它 → 「一起听吗？」→ 点【一起听♪】切回点评模式
+6. 右键 → 「看看热评」→ 左侧热评卡轮播；托盘菜单有播放控制
+7. 右键 → 换成「皮蛋」（小鸡）——角色包热切换
+
+## 旧项目可挖的剩余资产
+
+`gugu-desktop-pet`（GitHub: ccbili30-collab/gugu-desktop-pet）里还没移植的：飞行拼字彩蛋（PIL 字模→飞行路径拼写文字，pet_window.py:2581）、心形/8字飞行路径生成器、旧 memory/ 目录可以直接拷到 userData/memory/ 让鸽子"记得旧主人"。

@@ -7,6 +7,7 @@ import { computeRegions, reportRegions } from './pet/regions'
 import { Bubbles } from './overlay/Bubbles'
 import { MicOrb } from './overlay/MicOrb'
 import { MiniPlayer } from './overlay/MiniPlayer'
+import { HotComments } from './overlay/HotComments'
 import { ContextMenu, type MenuItem } from './overlay/ContextMenu'
 
 
@@ -42,6 +43,8 @@ export default function App(): JSX.Element {
   const [packs, setPacks] = useState<{ id: string; name: string; version: string }[]>([])
   const [currentPack, setCurrentPack] = useState('pigeon')
   const [hasTrack, setHasTrack] = useState(false)
+  const [sceneMode, setSceneMode] = useState<'normal' | 'emo' | 'listening'>('normal')
+  const [hotOpen, setHotOpen] = useState(false)
 
   // 音乐状态（迷你播放器/交互区域需要知道是否有曲目）
   useEffect(() => {
@@ -50,16 +53,23 @@ export default function App(): JSX.Element {
     return off
   }, [])
 
+  // 场景状态（emo 氛围等）
+  useEffect(() => {
+    const off = window.gugu.onSceneState(({ mode }) => setSceneMode(mode))
+    return off
+  }, [])
+
   // 交互区域上报（点击穿透用）
   useEffect(() => {
     reportRegions(
       computeRegions({
         bubbleCount: bubbles.length,
-        menu: menu ? { x: menu.x, y: menu.y, items: 9 + packs.length } : null,
-        hasTrack
+        menu: menu ? { x: menu.x, y: menu.y, items: 11 + packs.length } : null,
+        hasTrack,
+        hotOpen
       })
     )
-  }, [bubbles.length, menu, hasTrack, packs.length])
+  }, [bubbles.length, menu, hasTrack, packs.length, hotOpen])
 
   // 主进程 → 宠物气泡（大脑回复/歌评/共鸣/邀请）
   useEffect(() => {
@@ -81,6 +91,8 @@ export default function App(): JSX.Element {
       bus.emit('trackChange', { name: track.name, artists: track.artists, trial })
     }
     audioRef.current = eng
+    // 调试/自动化测试钩子（CDP 可静音验证，不打扰用户扬声器）
+    ;(window as unknown as Record<string, unknown>).__guguAudio = eng
     setAudio(eng)
     return () => {
       eng.destroy()
@@ -182,6 +194,8 @@ export default function App(): JSX.Element {
   const items: MenuItem[] = [
     { label: '💬 陪我聊聊', onClick: () => window.gugu.openChat() },
     { label: '🎵 随机来一首', onClick: () => void playRandom() },
+    { label: '📝 看看热评', onClick: () => setHotOpen(true) },
+    { label: '🌧️ 演示：雨夜EMO', onClick: () => void window.gugu.sceneForceEmo() },
     { label: '🚶 走两步', onClick: () => engineRef.current?.walkTo() },
     { label: '🕊️ 飞一圈', onClick: () => engineRef.current?.flyAround() },
     engineRef.current?.isSleeping
@@ -199,11 +213,20 @@ export default function App(): JSX.Element {
   ]
 
   return (
-    <div className="overlay">
+    <div className={`overlay${sceneMode === 'emo' ? ' scene-emo' : ''}`}>
       <div ref={hostRef} className="stage" />
-      <Bubbles items={bubbles} />
+      {sceneMode === 'emo' && <div className="emo-vignette" />}
+      <Bubbles
+        items={bubbles}
+        onInvite={(accept) => {
+          if (accept) window.gugu.sceneAccept()
+          else window.gugu.sceneDecline()
+          setBubbles((cur) => cur.filter((b) => b.kind !== 'invite'))
+        }}
+      />
       <MicOrb recording={micOn} onClick={() => void toggleMic(mic)} />
       <MiniPlayer engine={audio} />
+      <HotComments open={hotOpen} onClose={() => setHotOpen(false)} />
       {menu && (
         <ContextMenu
           x={menu.x}

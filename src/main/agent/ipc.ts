@@ -8,6 +8,7 @@ import { join } from 'node:path'
 
 export function registerAgentIpc(): void {
   brain.boot()
+  void import('./scenes').then(({ sceneEngine }) => sceneEngine.boot())
 
   ipcMain.handle('llm:config:get', () => {
     const c = loadConfig()
@@ -36,5 +37,15 @@ export function registerAgentIpc(): void {
   })
   ipcMain.handle('sing:pool', () => brain.singPool())
   ipcMain.handle('sing:summary', (_e, durSec: number) => brain.singSummary(durSec))
+  ipcMain.on('scene:accept', () => {
+    void import('./scenes').then(({ sceneEngine }) => sceneEngine.acceptInvite())
+  })
+  ipcMain.on('scene:decline', () => {
+    void import('./scenes').then(({ sceneEngine }) => sceneEngine.declineInvite())
+  })
+  ipcMain.handle('scene:force-emo', () => {
+    // 演示/测试入口：无视天气直接进一次 emo 场景
+    void import('./scenes').then(({ sceneEngine }) => sceneEngine.forceEmoForDemo())
+  })
   ipcMain.handle('memory:dir', () => join(memoryDir(), '..'))
 }

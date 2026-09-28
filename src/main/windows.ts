@@ -10,6 +10,7 @@ export const PET_WINDOW = { width: 560, height: 420, anchorX: 250, anchorY: 316 
 let petWin: BrowserWindow | null = null
 let chatWin: BrowserWindow | null = null
 let loginWin: BrowserWindow | null = null
+let settingsWin: BrowserWindow | null = null
 
 function rendererUrl(name: string): string | null {
   const base = process.env['ELECTRON_RENDERER_URL']
@@ -145,6 +146,38 @@ export function createLoginWindow(): BrowserWindow {
     loginWin?.focus()
   })
   return loginWin
+}
+
+export function createSettingsWindow(): BrowserWindow {
+  if (settingsWin && !settingsWin.isDestroyed()) {
+    settingsWin.show()
+    settingsWin.focus()
+    return settingsWin
+  }
+  settingsWin = new BrowserWindow({
+    width: 420,
+    height: 620,
+    resizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    show: false,
+    titleBarStyle: 'hiddenInset',
+    trafficLightPosition: { x: 12, y: 12 },
+    backgroundColor: '#00000000',
+    title: '咕咕 · 设置',
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false
+    }
+  })
+  loadRenderer(settingsWin, 'settings')
+  settingsWin.once('ready-to-show', () => {
+    settingsWin?.show()
+    settingsWin?.focus()
+  })
+  return settingsWin
 }
 
 let appQuitting = false

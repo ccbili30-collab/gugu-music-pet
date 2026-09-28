@@ -1,6 +1,6 @@
 import { app, Menu, Tray, nativeImage } from 'electron'
 import { join } from 'node:path'
-import { getPetWindow, createChatWindow, createLoginWindow, setAppQuitting } from './windows'
+import { getPetWindow, createChatWindow, createLoginWindow, createSettingsWindow, setAppQuitting } from './windows'
 import type { PlayerState } from './music/service'
 import type { LoginState } from './music/provider'
 
@@ -36,6 +36,7 @@ export function refreshTray(player: PlayerState | null, login: LoginState | null
   template.push(
     { label: '显示咕咕', click: () => getPetWindow()?.show() },
     { label: '打开聊天', click: () => createChatWindow() },
+    { label: '设置…', click: () => createSettingsWindow() },
     { type: 'separator' }
   )
   if (login?.loggedIn) {

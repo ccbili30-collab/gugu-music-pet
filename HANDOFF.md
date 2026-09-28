@@ -1,6 +1,6 @@
 # gugu-music-pet 任务交接文档
 
-> 更新时间：2026-09-28 · 交接原因：切换开发电脑 · 项目进度：M1–M6 完成，M7 待做
+> 更新时间：2026-09-28 · M1–M7 全部完成（M7 于新机器收尾并实测） · 项目进度：可交付
 
 ## 这是什么项目
 
@@ -34,9 +34,18 @@ npm run dev      # 启动（鸽子会出现在屏幕角落）
 | M4 Agent 大脑 | ✅ | **mock LLM 端到端验证**：tool-calling→搜索→播放→气泡/歌曲卡片全链路跑通 |
 | M5 音律与伴唱 | ✅ | **实测 BPM 113/114**（Dynamite），danceEnergy 0.70 宠物随节拍跳舞；伴唱引擎+夸夸池完成 |
 | M6 场景与卡片 | ✅ | emo 场景验证：角落+hun 动画+音量 0.35+氛围；CDN 403 已修（resolve 预检+重取）；哼歌/共鸣/邀请/热评卡完成 |
-| M7 收尾 | ⬜ 待做 | 见下文 |
+| M7 收尾 | ✅ 2026-09-28 完成 | 设置面板+33 单测+dmg 打包实测+README/GIF，见下文「M7 完成记录」 |
 
 ## M7 待办清单（下一台电脑的工作）
+
+> **2026-09-28 已全部完成**，实施记录如下，供后来者对照：
+
+1. **设置面板 ✅**：新设置窗 `src/renderer/settings.html` + `src/renderer/src/settings/SettingsApp.tsx`（四分区：LLM/天气城市/音量/角色包）。主进程新增 `src/main/settings.ts`（`settings:*` / `pet:pack:*` IPC）；`store.ts` 的 AppConfig 增加 `packId`；engine 启动时读持久化角色包，`pet:command` 新增 `pack` 分支；托盘和右键菜单都有入口。e2e：`scripts/testing/settings-e2e.mjs`（7 项全过）。
+2. **vitest 单测 ✅**：`tests/{physics,beat,drives}.test.ts` 共 33 用例（`npm test`）。vitest 配置在 `vitest.config.ts`（node 环境，三个目标文件都是纯函数无 electron 依赖）。
+3. **electron-builder 打 dmg ✅**：配置 `electron-builder.yml`；麦克风权限双保险——`build/entitlements.mac.plist`（audio-input + Electron 三件套）+ Info.plist `NSMicrophoneUsageDescription`（extendInfo），另加 `LSUIElement`（无 Dock 图标）。角色包走 asar 内 `out/renderer/characters`（vite 自动拷 public，packs.ts 打包路径本来就对，无需改）。图标由 `scripts/make-icon.mjs` 从鸽子 idle 帧生成 `build/icon.png`（1024，纯 Node PNG 编码器）。`npm run dist` = bake + build + electron-builder。**实测**：dmg 138MB，打包版 CDP 冒烟通过（packsList/真实搜索/设置窗/天气持久化）。注意：本机无 Developer ID 证书未签名，Gatekeeper 需右键打开（README 已写）。
+4. **README ✅**：评委向 `README.md` + `docs/`（demo.gif 由 `scripts/testing/capture-demo.mjs` 用 CDP Page.startScreencast 录制后 ffmpeg-static 转制，无需屏幕录制权限；settings.png / chat.png 为 Page.captureScreenshot 截图）。
+
+原待办（保留存照）：
 
 1. **设置面板**：目前 LLM 配置藏在聊天窗 ⚙️，需要整合成正式设置窗（LLM/天气城市 `src/main/weather.ts` 的 setCity/音量默认值/角色包选择）。天气城市存 `userData/weather.json`。
 2. **vitest 单测**：物理积分器（`src/renderer/src/pet/physics.ts`）、节拍检测（`beat.ts`，可喂合成频谱数据）、驱动力漂移（`src/main/agent/drives.ts`）。
@@ -100,6 +109,8 @@ npm run dev      # 启动（鸽子会出现在屏幕角落）
 - **网络**：国内直连 npm/github 会超时，.npmrc 已配镜像；gh push 若超时多重试。
 - **测试时别外放音乐**：所有自动化验证先执行 `window.__guguAudio.setMuted(true)`（静音但节拍分析照常）。CDP 调试：`npx electron-vite dev -- --remote-debugging-port=9222`，然后跑 `scripts/testing/*.mjs`（先起 `mock-llm.mjs`）。
 - **内存里的会话上下文**：重启后聊天历史从 userData/chat-history.json 恢复可见消息（工具调用细节不恢复）。
+- **dev 与打包版不能同时跑**：Electron 按 productName 取 userData（都叫 "Gugu Music Pet"），单实例锁会直接踢掉后启动的那个。测打包版前先退掉 `npm run dev` 的实例（打包版二进制可加 `--remote-debugging-port=9223` 挂 CDP）。
+- **新机器环境**：这台机器 Node 装在 `~/.local/node`（symlink 到 `~/.local/bin`，已写入 zsh/bash profile）。非交互 shell 可能读不到 PATH，脚本里用绝对路径或先 `export PATH="$HOME/.local/bin:$PATH"`。
 
 ## 比赛演示动线（可直接照着演）
 

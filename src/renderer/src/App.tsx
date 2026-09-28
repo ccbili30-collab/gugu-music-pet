@@ -207,7 +207,7 @@ export default function App(): JSX.Element {
           onClick: () => void engineRef.current?.switchPack(p.id)
         }))
       : []),
-    { label: '⚙️ 设置（即将上线）', disabled: true, onClick: () => {} },
+    { label: '⚙️ 设置', onClick: () => window.gugu.openSettings() },
     { label: '🔑 扫码登录网易云', onClick: () => window.gugu.openLogin() },
     { label: '🚪 再见', onClick: () => window.gugu.quit() }
   ]

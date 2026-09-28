@@ -71,6 +71,7 @@ export interface GuguApi {
   setDragging(d: boolean): void
   openChat(): void
   openLogin(): void
+  openSettings(): void
   quit(): void
   music: {
     qrCreate(): Promise<{ key: string; qrimg: string }>
@@ -110,6 +111,14 @@ export interface GuguApi {
   sceneAccept(): void
   sceneDecline(): void
   sceneForceEmo(): Promise<void>
+  settings: {
+    get(): Promise<{ city: string }>
+    setCity(city: string): Promise<{ ok: boolean; city?: string }>
+    setVolume(v: number): Promise<{ ok: boolean }>
+    switchPack(id: string): Promise<{ ok: boolean }>
+  }
+  petPackGet(): Promise<string>
+  petPackSet(id: string): Promise<{ ok: boolean }>
 }
 
 const api: GuguApi = {
@@ -131,6 +140,7 @@ const api: GuguApi = {
   setDragging: (d) => ipcRenderer.send('ui:dragging', d),
   openChat: () => ipcRenderer.send('chat:open'),
   openLogin: () => ipcRenderer.send('login:open'),
+  openSettings: () => ipcRenderer.send('settings:open'),
   quit: () => ipcRenderer.send('app:quit'),
   music: {
     qrCreate: () => ipcRenderer.invoke('music:qr:create'),
@@ -193,7 +203,15 @@ const api: GuguApi = {
   },
   sceneAccept: () => ipcRenderer.send('scene:accept'),
   sceneDecline: () => ipcRenderer.send('scene:decline'),
-  sceneForceEmo: () => ipcRenderer.invoke('scene:force-emo')
+  sceneForceEmo: () => ipcRenderer.invoke('scene:force-emo'),
+  settings: {
+    get: () => ipcRenderer.invoke('settings:get'),
+    setCity: (city) => ipcRenderer.invoke('settings:setCity', city),
+    setVolume: (v) => ipcRenderer.invoke('settings:setVolume', v),
+    switchPack: (id) => ipcRenderer.invoke('settings:switchPack', id)
+  },
+  petPackGet: () => ipcRenderer.invoke('pet:pack:get'),
+  petPackSet: (id) => ipcRenderer.invoke('pet:pack:set', id)
 }
 
 contextBridge.exposeInMainWorld('gugu', api)

@@ -88,7 +88,15 @@ export class PetEngine {
     this.motionContainer.position.set(LAYOUT.anchorX, LAYOUT.anchorY)
     this.app.stage.addChild(this.motionContainer)
 
-    this.loaded = await loadPack('pigeon')
+    let startPack = 'pigeon'
+    try {
+      startPack = (await window.gugu.petPackGet()) || 'pigeon'
+      this.loaded = await loadPack(startPack)
+      this.currentPackIdVal = startPack
+    } catch {
+      this.loaded = await loadPack('pigeon')
+      this.currentPackIdVal = 'pigeon'
+    }
     this.buildSprite()
     this.particles = new Particles(this.app)
     this.animator = new Animator(this.loaded)
@@ -141,6 +149,9 @@ export class PetEngine {
         case 'say':
           bus.emit('bubble', makeBubble({ kind: 'say', text: cmd.text, ttl: 6000 }))
           break
+        case 'pack':
+          void this.switchPack((raw as { id?: string }).id ?? 'pigeon')
+          break
       }
     })
 
@@ -164,7 +175,7 @@ export class PetEngine {
     this.setupInteraction()
   }
 
-  /** 热切换角色包 */
+  /** 热切换角色包（切换成功后持久化，下次启动沿用） */
   async switchPack(id: string): Promise<boolean> {
     if (id === this.currentPackId) return true
     try {
@@ -174,6 +185,11 @@ export class PetEngine {
       this.currentPackIdVal = id
       this.motion.kickSquash(0.7)
       bus.emit('pack', { id })
+      try {
+        await window.gugu.petPackSet(id)
+      } catch {
+        /* 持久化失败不影响本次切换 */
+      }
       return true
     } catch (err) {
       console.error('switchPack failed:', err)

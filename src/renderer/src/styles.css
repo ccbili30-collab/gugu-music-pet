@@ -763,3 +763,92 @@ body {
 .chat-send:disabled {
   opacity: 0.45;
 }
+
+/* ---------- 设置窗 ---------- */
+.settings-app {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(180deg, #f8f8fb, #f1f1f6);
+  -webkit-app-region: drag;
+}
+
+.settings-scroll {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  padding: 48px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.settings-section {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  -webkit-app-region: no-drag;
+}
+
+.settings-section .cs-input {
+  width: 100%;
+}
+
+.settings-inline {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.settings-inline .cs-input {
+  flex: 1;
+}
+
+.settings-inline input[type='range'] {
+  flex: 1;
+  accent-color: #6a5ae0;
+}
+
+.settings-volume-num {
+  font-size: 12px;
+  color: #2c2c33;
+  width: 38px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.settings-hint {
+  font-size: 11px;
+  color: #9a9aa4;
+}
+
+.settings-pack {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: #fbfbfd;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: #2c2c33;
+}
+
+.settings-pack-active {
+  border-color: #6a5ae0;
+  background: #f0edff;
+}
+
+.settings-pack-name {
+  flex: 1;
+  text-align: left;
+}
+
+.settings-pack-ver {
+  font-size: 11px;
+  color: #9a9aa4;
+}

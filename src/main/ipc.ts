@@ -1,8 +1,9 @@
 import { ipcMain, screen, app } from 'electron'
-import { getPetWindow, createChatWindow, createLoginWindow, PET_WINDOW, setAppQuitting } from './windows'
+import { getPetWindow, createChatWindow, createLoginWindow, createSettingsWindow, PET_WINDOW, setAppQuitting } from './windows'
 import { registerPacksIpc } from './packs'
 import { setRegions, setDragging } from './clickthrough'
 import { registerSpawnIpc } from './spawn'
+import { registerSettingsIpc } from './settings'
 
 export interface PetEventPayload {
   [key: string]: unknown
@@ -11,6 +12,7 @@ export interface PetEventPayload {
 export function registerIpc(): void {
   registerPacksIpc()
   registerSpawnIpc()
+  registerSettingsIpc()
   // 渲染进程物理循环 → 移动宠物窗口（坐标为宠物脚底点的屏幕坐标）
   ipcMain.on('pet:move', (_e, x: number, y: number) => {
     const win = getPetWindow()
@@ -37,6 +39,7 @@ export function registerIpc(): void {
 
   ipcMain.on('chat:open', () => createChatWindow())
   ipcMain.on('login:open', () => createLoginWindow())
+  ipcMain.on('settings:open', () => createSettingsWindow())
   ipcMain.on('ui:regions', (_e, rects) => setRegions(rects))
   ipcMain.on('ui:dragging', (_e, d: boolean) => setDragging(d))
   ipcMain.on('app:quit', () => {

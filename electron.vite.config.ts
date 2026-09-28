@@ -24,7 +24,8 @@ export default defineConfig({
         input: {
           pet: resolve('src/renderer/pet.html'),
           chat: resolve('src/renderer/chat.html'),
-          login: resolve('src/renderer/login.html')
+          login: resolve('src/renderer/login.html'),
+          settings: resolve('src/renderer/settings.html')
         }
       }
     }

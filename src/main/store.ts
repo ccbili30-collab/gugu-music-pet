@@ -22,6 +22,8 @@ export interface ChatMsg {
 export interface AppConfig {
   llm: LlmConfig
   personaName: string
+  /** 当前角色包 id（空 = 默认 pigeon） */
+  packId: string
 }
 
 const DEFAULT_CONFIG: AppConfig = {
@@ -31,7 +33,8 @@ const DEFAULT_CONFIG: AppConfig = {
     model: '',
     temperature: 0.8
   },
-  personaName: '咕咕'
+  personaName: '咕咕',
+  packId: ''
 }
 
 function userDataFile(name: string): string {

@@ -1,0 +1,27 @@
+appId: com.gugu.musicpet
+productName: Gugu Music Pet
+directories:
+  output: dist
+  buildResources: build
+files:
+  - out/**/*
+  - build/**/*
+  - package.json
+asar: true
+mac:
+  category: public.app-category.entertainment
+  icon: build/icon.png
+  target:
+    - target: dmg
+      arch:
+        - arm64
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  hardenedRuntime: true
+  darkModeSupport: true
+  extendInfo:
+    NSMicrophoneUsageDescription: 咕咕想听你跟唱，好在你不唱的时候夸夸你。
+    LSUIElement: true
+dmg:
+  title: 咕咕音乐桌宠 ${version}
+  artifactName: gugu-music-pet-${version}-arm64.dmg

@@ -1,0 +1,164 @@
+{
+  "id": "pigeon",
+  "name": "咕咕",
+  "version": "1.0.0",
+  "type": "frames",
+  "author": "gugu legacy revival",
+  "sprite": {
+    "image": "sheet.png",
+    "frameSize": [
+      16,
+      16
+    ],
+    "scale": 6
+  },
+  "frames": {
+    "idle1": {
+      "index": 0,
+      "groundRow": 11
+    },
+    "idle2": {
+      "index": 1,
+      "groundRow": 11
+    },
+    "sleep": {
+      "index": 2,
+      "groundRow": 10
+    },
+    "stand1": {
+      "index": 3,
+      "groundRow": 11
+    },
+    "stand2": {
+      "index": 4,
+      "groundRow": 11
+    },
+    "walk_right1": {
+      "index": 5,
+      "groundRow": 11
+    },
+    "walk_right2": {
+      "index": 6,
+      "groundRow": 11
+    },
+    "walk_left1": {
+      "index": 7,
+      "groundRow": 11
+    },
+    "walk_left2": {
+      "index": 8,
+      "groundRow": 11
+    },
+    "sit": {
+      "index": 9,
+      "groundRow": 10
+    },
+    "peck": {
+      "index": 10,
+      "groundRow": 11
+    },
+    "fly_right1": {
+      "index": 11,
+      "groundRow": 8
+    },
+    "fly_right2": {
+      "index": 12,
+      "groundRow": 8
+    },
+    "fly_left1": {
+      "index": 13,
+      "groundRow": 8
+    },
+    "fly_left2": {
+      "index": 14,
+      "groundRow": 8
+    }
+  },
+  "slots": {
+    "idle": {
+      "frames": [
+        "idle1",
+        "idle2"
+      ],
+      "fps": 2,
+      "loop": true
+    },
+    "stand": {
+      "frames": [
+        "stand1",
+        "stand2"
+      ],
+      "fps": 1.5,
+      "loop": true
+    },
+    "walk_right": {
+      "frames": [
+        "walk_right1",
+        "walk_right2"
+      ],
+      "fps": 6,
+      "loop": true
+    },
+    "walk_left": {
+      "frames": [
+        "walk_left1",
+        "walk_left2"
+      ],
+      "fps": 6,
+      "loop": true
+    },
+    "fly_right": {
+      "frames": [
+        "fly_right1",
+        "fly_right2"
+      ],
+      "fps": 10,
+      "loop": true
+    },
+    "fly_left": {
+      "frames": [
+        "fly_left1",
+        "fly_left2"
+      ],
+      "fps": 10,
+      "loop": true
+    },
+    "sit": {
+      "frames": [
+        "sit"
+      ],
+      "fps": 1,
+      "loop": true
+    },
+    "sleep": {
+      "frames": [
+        "sleep"
+      ],
+      "fps": 1,
+      "loop": true
+    },
+    "peck": {
+      "frames": [
+        "peck",
+        "stand1"
+      ],
+      "fps": 2,
+      "loop": true
+    },
+    "hum": {
+      "frames": [
+        "sit",
+        "sleep"
+      ],
+      "fps": 0.4,
+      "loop": true
+    }
+  },
+  "fallbacks": {
+    "dance": "idle",
+    "happy": "idle",
+    "hurt": "idle",
+    "drag": "fly_right",
+    "peck": "idle"
+  }
+}

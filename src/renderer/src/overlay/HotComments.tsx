@@ -62,7 +62,7 @@ export function HotComments({ open, onClose }: { open: boolean; onClose: () => v
           <div className="hc-content">{c.content}</div>
           <div className="hc-meta">
             <span className="hc-user">— {c.userName}</span>
-            <span className="hc-liked">♥ {c.likedCount}</span>
+            <span className="hc-liked"><img className="hc-heart" src="icons/heart.png" alt="" draggable={false} /> {c.likedCount}</span>
           </div>
         </div>
       ) : (

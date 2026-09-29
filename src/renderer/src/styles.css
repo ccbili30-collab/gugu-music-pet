@@ -26,8 +26,8 @@ body {
 /* ---------- AI 气泡（右侧） ---------- */
 .bubbles {
   position: absolute;
-  left: 302px; /* 宠物画面右缘(298)旁，水平贴头 */
-  bottom: 156px; /* 容器底 y≈264，单行气泡正对头部，多行向上伸展 */
+  left: 302px; /* 宠物画面右缘(298)旁，水平贴身 */
+  bottom: 134px; /* 容器底 y≈286，单行气泡与宠物身体同高，多行向上伸展 */
   width: 234px;
   display: flex;
   flex-direction: column;
@@ -40,10 +40,10 @@ body {
   position: relative;
   background: rgba(38, 38, 44, 0.92);
   color: #f5f5f7;
-  border-radius: 14px;
-  padding: 9px 12px;
-  font-size: 13px;
-  line-height: 1.5;
+  border-radius: 11px;
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1.45;
   max-width: 100%;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
   animation: bubble-in 0.28s cubic-bezier(0.2, 1.4, 0.4, 1);
@@ -199,6 +199,13 @@ body {
   color: #a8a8b3;
 }
 
+.hc-heart {
+  width: 12px;
+  height: 12px;
+  image-rendering: pixelated;
+  vertical-align: -1px;
+}
+
 .hc-liked {
   color: #f28383;
 }
@@ -262,6 +269,13 @@ body {
   transform: scale(0.95);
 }
 
+.mic-orb img {
+  width: 20px;
+  height: 20px;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
 .mic-orb:disabled {
   filter: grayscale(0.35);
   opacity: 0.65;
@@ -309,9 +323,19 @@ body {
   color: #ececf1;
   text-align: left;
   font-size: 13px;
-  padding: 7px 12px;
+  padding: 6px 12px;
   border-radius: 8px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ctx-ico {
+  width: 16px;
+  height: 16px;
+  image-rendering: pixelated;
+  flex-shrink: 0;
 }
 
 .ctx-item:not(:disabled):hover {

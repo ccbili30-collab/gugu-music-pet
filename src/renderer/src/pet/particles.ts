@@ -1,7 +1,7 @@
-import { Container, Text, type Application } from 'pixi.js'
+import { Container, Sprite, Texture, type Application } from 'pixi.js'
 
 interface Particle {
-  obj: Text
+  obj: Sprite
   vx: number
   vy: number
   life: number
@@ -9,23 +9,37 @@ interface Particle {
   spin: number
 }
 
-/** 心心 / 音符 / zzz 粒子层（Pixi Text 渲染 emoji） */
+/** 粒子贴图 id（/icons/<id>.png，由 npm run bake 烘焙） */
+export type ParticleIcon = 'heart' | 'note' | 'zzz' | 'spark'
+
+/** 心心 / 音符 / zzz 粒子层（像素图标 Sprite，与角色包同一画风） */
 export class Particles {
   private layer = new Container()
   private items: Particle[] = []
+  private textures = new Map<ParticleIcon, Texture>()
 
   constructor(app: Application) {
     app.stage.addChild(this.layer)
     app.ticker.add(() => this.update())
   }
 
-  private spawn(char: string, x: number, y: number, size: number, color?: number): void {
-    const obj = new Text({
-      text: char,
-      style: { fontSize: size, fontFamily: 'Apple Color Emoji, PingFang SC', fill: color ?? 0xffffff }
-    })
+  /** 引擎启动时预载（Asset 缓存后 Texture.from 同步可用） */
+  static async preload(): Promise<void> {
+    const { Assets } = await import('pixi.js')
+    await Promise.all((['heart', 'note', 'zzz', 'spark'] as const).map((id) => Assets.load(`icons/${id}.png`)))
+  }
+
+  private spawn(icon: ParticleIcon, x: number, y: number, size: number): void {
+    let tex = this.textures.get(icon)
+    if (!tex) {
+      tex = Texture.from(`icons/${icon}.png`)
+      this.textures.set(icon, tex)
+    }
+    const obj = new Sprite(tex)
     obj.anchor.set(0.5)
     obj.position.set(x, y)
+    const s = size / tex.width
+    obj.scale.set(s)
     this.layer.addChild(obj)
     this.items.push({
       obj,
@@ -38,24 +52,23 @@ export class Particles {
   }
 
   hearts(x: number, y: number, n = 3): void {
-    const chars = ['💖', '💗', '❤️', '💕']
     for (let i = 0; i < n; i++) {
-      setTimeout(() => this.spawn(chars[i % chars.length], x + (Math.random() - 0.5) * 44, y + (Math.random() - 0.5) * 16, 15 + Math.random() * 7), i * 130)
+      setTimeout(() => this.spawn('heart', x + (Math.random() - 0.5) * 44, y + (Math.random() - 0.5) * 16, 18 + Math.random() * 8), i * 130)
     }
   }
 
   notes(x: number, y: number, n = 1): void {
     for (let i = 0; i < n; i++) {
-      setTimeout(() => this.spawn('🎵', x + (Math.random() - 0.5) * 30, y, 14), i * 220)
+      setTimeout(() => this.spawn('note', x + (Math.random() - 0.5) * 30, y, 16), i * 220)
     }
   }
 
   zzz(x: number, y: number): void {
-    this.spawn('💤', x + 26, y - 20, 15)
+    this.spawn('zzz', x + 26, y - 20, 16)
   }
 
   impactStars(x: number, y: number): void {
-    this.spawn('💫', x, y, 16)
+    this.spawn('spark', x, y, 18)
   }
 
   update(): void {

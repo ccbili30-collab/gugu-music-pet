@@ -98,6 +98,7 @@ export class PetEngine {
       this.currentPackIdVal = 'pigeon'
     }
     this.buildSprite()
+    await Particles.preload()
     this.particles = new Particles(this.app)
     this.animator = new Animator(this.loaded)
 

@@ -194,24 +194,25 @@ export default function App(): JSX.Element {
   }
 
   const items: MenuItem[] = [
-    { label: '💬 陪我聊聊', onClick: () => window.gugu.openChat() },
-    { label: '🎵 随机来一首', onClick: () => void playRandom() },
-    { label: '📝 看看热评', onClick: () => setHotOpen(true) },
-    { label: '🌧️ 演示：雨夜EMO', onClick: () => void window.gugu.sceneForceEmo() },
-    { label: '🚶 走两步', onClick: () => engineRef.current?.walkTo() },
-    { label: '🕊️ 飞一圈', onClick: () => engineRef.current?.flyAround() },
+    { label: '陪我聊聊', icon: 'chat', onClick: () => window.gugu.openChat() },
+    { label: '随机来一首', icon: 'note', onClick: () => void playRandom() },
+    { label: '看看热评', icon: 'hot', onClick: () => setHotOpen(true) },
+    { label: '演示：雨夜EMO', icon: 'rain', onClick: () => void window.gugu.sceneForceEmo() },
+    { label: '走两步', icon: 'walk', onClick: () => engineRef.current?.walkTo() },
+    { label: '飞一圈', icon: 'bird', onClick: () => engineRef.current?.flyAround() },
     engineRef.current?.isSleeping
-      ? { label: '☀️ 叫醒咕咕', onClick: () => engineRef.current?.wake() }
-      : { label: '😴 睡觉', onClick: () => engineRef.current?.sleep() },
+      ? { label: '叫醒它', icon: 'sun', onClick: () => engineRef.current?.wake() }
+      : { label: '睡觉', icon: 'zzz', onClick: () => engineRef.current?.sleep() },
     ...(packs.length > 1
       ? packs.map((p) => ({
-          label: `${p.id === currentPack ? '●' : '○'} 换成 ${p.name}`,
+          label: `${p.id === currentPack ? '● ' : '○ '}${p.name}`,
+          icon: 'bird',
           onClick: () => void engineRef.current?.switchPack(p.id)
         }))
       : []),
-    { label: '⚙️ 设置', onClick: () => window.gugu.openSettings() },
-    { label: '🔑 扫码登录网易云', onClick: () => window.gugu.openLogin() },
-    { label: '🚪 再见', onClick: () => window.gugu.quit() }
+    { label: '设置', icon: 'gear', onClick: () => window.gugu.openSettings() },
+    { label: '扫码登录网易云', icon: 'qr', onClick: () => window.gugu.openLogin() },
+    { label: '再见', icon: 'power', onClick: () => window.gugu.quit() }
   ]
 
   return (

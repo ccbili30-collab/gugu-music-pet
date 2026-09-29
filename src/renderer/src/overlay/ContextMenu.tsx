@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react'
 
 export interface MenuItem {
   label: string
+  /** 像素图标 id（icons/<icon>.png，npm run bake 产物），可选 */
+  icon?: string
   disabled?: boolean
   onClick: () => void
 }
@@ -46,7 +48,8 @@ export function ContextMenu({
             onClose()
           }}
         >
-          {it.label}
+          {it.icon && <img className="ctx-ico" src={`icons/${it.icon}.png`} alt="" draggable={false} />}
+          <span>{it.label}</span>
         </button>
       ))}
     </div>

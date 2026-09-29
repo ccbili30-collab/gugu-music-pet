@@ -57,6 +57,8 @@ export class PetEngine {
   private strokeAccum = 0
   private lastPointer = { x: 0, y: 0 }
   private lastSent = { x: -9999, y: -9999 }
+  private offCommand: (() => void) | null = null
+  private offScreenChanged: (() => void) | null = null
   private lastSaved = { x: -9999, y: -9999 }
   private lastZzz = 0
   private boundsTimer = 0
@@ -105,12 +107,12 @@ export class PetEngine {
     this.scheduler = new IdleScheduler((a) => this.onIdleAction(a))
 
     this.setupBounds()
-    window.gugu.onScreenChanged(() => void this.setupBounds(false))
+    this.offScreenChanged = window.gugu.onScreenChanged(() => void this.setupBounds(false))
 
     this.setupInteraction()
 
     // 大脑/托盘指令：dance/hum/fly/sit/sleep/wake/say
-    window.gugu.onCommand((raw) => {
+    this.offCommand = window.gugu.onCommand((raw) => {
       const cmd = raw as { action: string; text?: string }
       switch (cmd.action) {
         case 'dance':
@@ -421,11 +423,13 @@ export class PetEngine {
     this.sleeping = true
     this.walking = null
     this.minorAction = null
+    window.gugu.emitEvent('sleep') // 让 brain 同步驱动力模式，否则没人负责唤醒
   }
 
   wake(): void {
     this.sleeping = false
     this.motion.kickSquash(0.5)
+    window.gugu.emitEvent('wake')
   }
 
   get isSleeping(): boolean {
@@ -436,6 +440,8 @@ export class PetEngine {
     cancelAnimationFrame(this.raf)
     window.removeEventListener('pointermove', this.onWindowPointerMove)
     window.removeEventListener('pointerup', this.onWindowPointerUp)
+    this.offCommand?.()
+    this.offScreenChanged?.()
     this.app.destroy(true, { children: true })
   }
 

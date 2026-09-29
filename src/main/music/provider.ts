@@ -148,17 +148,23 @@ export class SodaProvider {
     return (body.data?.songs ?? []).slice(0, limit).map(toTrack)
   }
 
-  /** 取播放链接：直接给 sidecar 的解密代理流（支持 Range，节拍检测可用） */
+  /** 取播放链接：sidecar 解密代理流（支持 Range，节拍检测可用）。
+   *  部分曲目 sidecar 解密会 502，inspect 又探不出来——必须对真流做 Range 探测，
+   *  否则死流交给 <audio> 才爆 code=4，用户看到"播放成功却说失败"。 */
   async songUrl(id: string): Promise<{ url: string | null; trial: boolean }> {
-    // 先确认可用性（sidecar 会解密并给出流）
-    const check = await sidecarFetch(
-      `/api/v1/music/inspect?source=soda&id=${encodeURIComponent(id)}`
-    )
-    if (!check.ok) return { url: null, trial: false }
-    return {
-      url: `http://127.0.0.1:${SIDECAR_PORT}/api/v1/music/stream?source=soda&id=${encodeURIComponent(id)}`,
-      trial: false
+    const streamUrl = `http://127.0.0.1:${SIDECAR_PORT}/api/v1/music/stream?source=soda&id=${encodeURIComponent(id)}`
+    try {
+      const res = await fetch(streamUrl, {
+        headers: { Range: 'bytes=0-1' },
+        signal: AbortSignal.timeout(12_000)
+      })
+      // 消费掉连接（探测流不交给播放器）
+      void res.body?.cancel()
+      if (res.status !== 200 && res.status !== 206) return { url: null, trial: false }
+    } catch {
+      return { url: null, trial: false }
     }
+    return { url: streamUrl, trial: false }
   }
 
   /** 汽水搜索结果自带元数据；按 id 回查用分享链接解析 */

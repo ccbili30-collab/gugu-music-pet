@@ -38,6 +38,7 @@ export class Brain {
   private nextAutonomyDelay = 120_000
   private timer: NodeJS.Timeout | null = null
   private busy = false
+  private sleepStartedAt = 0
 
   boot(): void {
     this.history = loadHistory()
@@ -55,18 +56,27 @@ export class Brain {
 
   private tickLoops(): void {
     const active = Date.now() < this.activityUntil
-    this.drives.mode = active
-      ? 'chatting'
-      : musicService.api.currentState().playing
-        ? 'dancing'
-        : 'idle'
+    // sleeping 状态必须保持，否则能量恢复漂移(+0.02/s)会被 idle 漂移(-0.002/s)覆盖，永远醒不了
+    if (this.drives.mode !== 'sleeping') {
+      this.drives.mode = active
+        ? 'chatting'
+        : musicService.api.currentState().playing
+          ? 'dancing'
+          : 'idle'
+    }
     this.drives.tick(1)
-    // 能量过低 → 催宠物睡觉
-    if (this.drives.drives.energy < 0.12) {
+    // 能量过低 → 催宠物睡觉（mode 保护下只发一次）
+    if (this.drives.drives.energy < 0.12 && this.drives.mode !== 'sleeping') {
       sendToPet('pet:command', { action: 'sleep' })
       this.drives.mode = 'sleeping'
+      this.sleepStartedAt = Date.now()
     }
-    if (this.drives.mode === 'sleeping' && this.drives.drives.energy > 0.6) {
+    // 手动睡觉也要保证最低睡眠时长（90s），否则高能量下会秒醒
+    if (
+      this.drives.mode === 'sleeping' &&
+      this.drives.drives.energy > 0.6 &&
+      Date.now() - this.sleepStartedAt > 90_000
+    ) {
       sendToPet('pet:command', { action: 'wake' })
       this.drives.mode = 'idle'
     }
@@ -85,6 +95,15 @@ export class Brain {
   }
 
   petEvent(name: string): void {
+    if (name === 'sleep') {
+      this.drives.mode = 'sleeping'
+      this.sleepStartedAt = Date.now()
+      return
+    }
+    if (name === 'wake') {
+      if (this.drives.mode === 'sleeping') this.drives.mode = 'idle'
+      return
+    }
     this.drives.impact(name)
     this.activityUntil = Date.now() + 30_000
     if (name === 'click') {

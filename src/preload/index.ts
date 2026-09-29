@@ -62,8 +62,8 @@ export interface GuguApi {
   move(x: number, y: number): void
   emitEvent(name: string, payload?: unknown): void
   screenInfo(x: number, y: number): Promise<ScreenInfo>
-  onScreenChanged(cb: () => void): void
-  onCommand(cb: (cmd: unknown) => void): void
+  onScreenChanged(cb: () => void): () => void
+  onCommand(cb: (cmd: unknown) => void): () => void
   packsList(): Promise<{ id: string; name: string; version: string }[]>
   spawnGet(): Promise<{ x: number; y: number }>
   spawnSave(x: number, y: number): void
@@ -130,10 +130,12 @@ const api: GuguApi = {
   onScreenChanged: (cb) => {
     const listener = (_e: IpcRendererEvent): void => cb()
     ipcRenderer.on('screen:changed', listener)
+    return () => ipcRenderer.removeListener('screen:changed', listener)
   },
   onCommand: (cb) => {
     const listener = (_e: IpcRendererEvent, cmd: unknown): void => cb(cmd)
     ipcRenderer.on('pet:command', listener)
+    return () => ipcRenderer.removeListener('pet:command', listener)
   },
   packsList: () => ipcRenderer.invoke('packs:list'),
   spawnGet: () => ipcRenderer.invoke('pet:spawn:get'),

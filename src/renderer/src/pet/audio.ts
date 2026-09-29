@@ -15,6 +15,8 @@ export class AudioEngine {
   private analyser: AnalyserNode | null = null
   private reportTimer = 0
   private lastErrorTrackId = ''
+  private lastSkipToastAt = 0
+  private offCommand: (() => void) | null = null
 
   /** 播放失败等需要气泡反馈的事件 */
   onError: ((msg: string) => void) | null = null
@@ -37,7 +39,7 @@ export class AudioEngine {
       this.lastErrorTrackId = this.track.id
       this.next(true)
     })
-    window.gugu.onMusicCommand((cmd) => this.handleCommand(cmd))
+    this.offCommand = window.gugu.onMusicCommand((cmd) => this.handleCommand(cmd))
     this.reportTimer = window.setInterval(() => {
       if (!this.el.paused) this.report()
     }, 1000)
@@ -142,14 +144,14 @@ export class AudioEngine {
     this.index = i
     const r = await window.gugu.music.resolve(track.id)
     if (!r.url) {
-      this.onError?.(
-        r.error === 'vip'
-          ? `《${track.name}》需要汽水 VIP 才能听完整的哦`
-          : `《${track.name}》暂时放不了，咕咕帮你跳下一首…`
-      )
+      // 连续跳歌时不刷屏：8 秒内只提示一次
+      if (Date.now() - this.lastSkipToastAt > 8000) {
+        this.onError?.(`《${track.name}》暂时放不了，咕咕帮你跳下一首…`)
+        this.lastSkipToastAt = Date.now()
+      }
       window.setTimeout(() => {
         if (this.index === i) this.next(true)
-      }, 1200)
+      }, 1000)
       return
     }
     this.track = track
@@ -159,8 +161,15 @@ export class AudioEngine {
     try {
       await this.el.play()
     } catch (e) {
-      console.error('play failed', e)
-      this.onError?.('播放失败了…再点一次试试？')
+      // 常见为加载竞态（上一首的 load 中断了 play）——静默重试一次，
+      // 仍失败交给 error 事件兜底跳下一首，不弹"失败"吓用户
+      console.error('play failed, retrying once', e)
+      await new Promise((r) => setTimeout(r, 300))
+      try {
+        await this.el.play()
+      } catch {
+        /* error 事件兜底 */
+      }
     }
     this.onTrackChange?.(track, this.trial)
     this.report()
@@ -255,6 +264,7 @@ export class AudioEngine {
 
   destroy(): void {
     window.clearInterval(this.reportTimer)
+    this.offCommand?.()
     this.el.pause()
     this.el.removeAttribute('src')
   }

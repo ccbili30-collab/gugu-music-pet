@@ -59,9 +59,13 @@ console.log('settings window open:', settings.title)
 const s = connect(settings.webSocketDebuggerUrl)
 await s.ready
 
-// 界面渲染
-const sectionCount = await s.ev(`document.querySelectorAll('.settings-section').length`)
-check('设置面板渲染 4 个分区', sectionCount === 4, `got ${sectionCount}`)
+// 界面渲染（托盘弹出面板）
+const hasPanel = await s.ev(`!!document.querySelector('.panel')`)
+const rowCount = await s.ev(`document.querySelectorAll('.panel-row').length`)
+const hasStatus = await s.ev(`!!document.querySelector('.panel-status')`)
+check('面板容器渲染', hasPanel === true)
+check('面板含实时状态卡', hasStatus === true)
+check('面板分区行 ≥ 4', rowCount >= 4, `got ${rowCount}`)
 
 // 城市保存
 const cityBefore = await s.ev(`window.gugu.settings.get().then(r=>r.city)`)

@@ -1,10 +1,14 @@
-import { app, Menu, Tray, nativeImage } from 'electron'
+import { app, Menu, Tray, nativeImage, screen } from 'electron'
 import { join } from 'node:path'
-import { getPetWindow, createChatWindow, createLoginWindow, createSettingsWindow, setAppQuitting } from './windows'
+import { getPetWindow, createChatWindow, createLoginWindow, createSettingsPanel, getSettingsPanel, setAppQuitting } from './windows'
 import type { PlayerState } from './music/service'
 import type { LoginState } from './music/provider'
 
 let tray: Tray | null = null
+let contextMenu: Menu | null = null
+let panelLastHiddenAt = 0
+
+const PANEL_W = 360
 
 export function createTray(): Tray {
   if (tray) return tray
@@ -12,12 +16,59 @@ export function createTray(): Tray {
   icon.setTemplateImage(true)
   tray = new Tray(icon)
   tray.setToolTip('咕咕音乐桌宠')
-  refreshTray(null, null)
+  rebuildMenu(null, null)
+  // 左键：托盘弹出设置面板（Keepresso 式）；右键：传统菜单
+  tray.on('click', () => toggleSettingsPanel())
+  tray.on('right-click', () => {
+    if (contextMenu) tray?.popUpContextMenu(contextMenu)
+  })
   return tray
 }
 
 export function refreshTray(player: PlayerState | null, login: LoginState | null): void {
-  if (!tray) return
+  rebuildMenu(player, login)
+}
+
+/** 托盘图标下方弹出/收起设置面板 */
+export function toggleSettingsPanel(): void {
+  const panel = getSettingsPanel()
+  const visible = panel?.isVisible() ?? false
+  // 刚因失焦收起（比如点托盘图标触发 blur）就不立刻再弹
+  if (!visible && Date.now() - panelLastHiddenAt < 300) return
+  if (visible) {
+    panel?.hide()
+    panelLastHiddenAt = Date.now()
+  } else {
+    showSettingsPanel()
+  }
+}
+
+export function showSettingsPanel(): void {
+  const panel = createSettingsPanel()
+  const bounds = tray?.getBounds()
+  const display = screen.getDisplayNearestPoint(bounds ? { x: bounds.x, y: bounds.y } : screen.getPrimaryDisplay().workArea)
+  const wa = display.workArea
+  let x = wa.x + wa.width - PANEL_W - 8
+  let y = wa.y + 5
+  if (bounds) {
+    x = Math.round(bounds.x + bounds.width / 2 - PANEL_W / 2)
+    x = Math.max(wa.x + 8, Math.min(x, wa.x + wa.width - PANEL_W - 8))
+    y = Math.round(bounds.y + bounds.height + 5)
+  }
+  panel.setPosition(x, y)
+  panel.show()
+  panel.focus()
+}
+
+export function hideSettingsPanel(): void {
+  const panel = getSettingsPanel()
+  if (panel?.isVisible()) {
+    panel.hide()
+    panelLastHiddenAt = Date.now()
+  }
+}
+
+function rebuildMenu(player: PlayerState | null, login: LoginState | null): void {
   const track = player?.track
   const template: Electron.MenuItemConstructorOptions[] = []
 
@@ -36,7 +87,7 @@ export function refreshTray(player: PlayerState | null, login: LoginState | null
   template.push(
     { label: '显示咕咕', click: () => getPetWindow()?.show() },
     { label: '打开聊天', click: () => createChatWindow() },
-    { label: '设置…', click: () => createSettingsWindow() },
+    { label: '设置…', click: () => showSettingsPanel() },
     { type: 'separator' }
   )
   if (login?.loggedIn) {
@@ -57,7 +108,7 @@ export function refreshTray(player: PlayerState | null, login: LoginState | null
       }
     }
   )
-  tray.setContextMenu(Menu.buildFromTemplate(template))
+  contextMenu = Menu.buildFromTemplate(template)
 }
 
 // 延迟 import 打破 service ↔ tray 循环依赖

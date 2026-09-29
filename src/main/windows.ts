@@ -10,7 +10,7 @@ export const PET_WINDOW = { width: 560, height: 420, anchorX: 250, anchorY: 316 
 let petWin: BrowserWindow | null = null
 let chatWin: BrowserWindow | null = null
 let loginWin: BrowserWindow | null = null
-let settingsWin: BrowserWindow | null = null
+let settingsPanel: BrowserWindow | null = null
 
 function rendererUrl(name: string): string | null {
   const base = process.env['ELECTRON_RENDERER_URL']
@@ -148,22 +148,27 @@ export function createLoginWindow(): BrowserWindow {
   return loginWin
 }
 
-export function createSettingsWindow(): BrowserWindow {
-  if (settingsWin && !settingsWin.isDestroyed()) {
-    settingsWin.show()
-    settingsWin.focus()
-    return settingsWin
-  }
-  settingsWin = new BrowserWindow({
-    width: 420,
-    height: 620,
+/**
+ * 设置面板：挂在托盘图标下方的弹出层（Keepresso 式）。
+ * 无边框 + popover 毛玻璃；失去焦点自动收起（由 tray.ts 控制显示/定位）。
+ */
+export function createSettingsPanel(): BrowserWindow {
+  if (settingsPanel && !settingsPanel.isDestroyed()) return settingsPanel
+  settingsPanel = new BrowserWindow({
+    width: 360,
+    height: 640,
+    useContentSize: true,
+    show: false,
+    frame: false,
+    transparent: true,
+    vibrancy: 'popover',
+    visualEffectState: 'active',
     resizable: false,
+    minimizable: false,
     maximizable: false,
     fullscreenable: false,
-    show: false,
-    titleBarStyle: 'hiddenInset',
-    trafficLightPosition: { x: 12, y: 12 },
-    backgroundColor: '#00000000',
+    skipTaskbar: true,
+    hasShadow: true,
     title: '咕咕 · 设置',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -172,12 +177,23 @@ export function createSettingsWindow(): BrowserWindow {
       sandbox: false
     }
   })
-  loadRenderer(settingsWin, 'settings')
-  settingsWin.once('ready-to-show', () => {
-    settingsWin?.show()
-    settingsWin?.focus()
+  settingsPanel.setAlwaysOnTop(true, 'pop-up-menu')
+  settingsPanel.on('blur', () => {
+    // DevTools 打开时不收起，方便调试
+    if (settingsPanel && !settingsPanel.webContents.isDevToolsOpened()) settingsPanel.hide()
   })
-  return settingsWin
+  settingsPanel.on('close', (e) => {
+    if (!appQuitting) {
+      e.preventDefault()
+      settingsPanel?.hide()
+    }
+  })
+  loadRenderer(settingsPanel, 'settings')
+  return settingsPanel
+}
+
+export function getSettingsPanel(): BrowserWindow | null {
+  return settingsPanel && !settingsPanel.isDestroyed() ? settingsPanel : null
 }
 
 let appQuitting = false

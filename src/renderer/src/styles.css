@@ -852,3 +852,202 @@ body {
   font-size: 11px;
   color: #9a9aa4;
 }
+
+/* ---------- 托盘弹出设置面板（毛玻璃，挂在托盘图标下方） ---------- */
+.panel {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 12px 14px;
+  background: rgba(246, 245, 250, 0.82);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 14px;
+  overflow-y: auto;
+  font-size: 12px;
+  color: #2c2c33;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+}
+
+.panel-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(106, 90, 224, 0.1);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.panel-status-icon {
+  font-size: 22px;
+}
+
+.panel-status-title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.panel-status-sub {
+  font-size: 11px;
+  color: #6e6e78;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 270px;
+}
+
+.panel-sep {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.08);
+  margin: 3px 0;
+}
+
+.panel-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.panel-label {
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.panel-badge {
+  font-size: 10px;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.panel-badge-ok {
+  background: rgba(52, 168, 83, 0.15);
+  color: #1e7c34;
+}
+
+.panel-badge-warn {
+  background: rgba(240, 150, 40, 0.16);
+  color: #b06a10;
+}
+
+.panel-input {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  padding: 6px 9px;
+  font-size: 12px;
+  outline: none;
+  background: rgba(255, 255, 255, 0.75);
+  width: 100%;
+}
+
+.panel-input:focus {
+  border-color: #7c6cf0;
+}
+
+.panel-input-narrow {
+  width: 84px;
+  flex-shrink: 0;
+}
+
+.panel-input-city {
+  width: 96px;
+}
+
+.panel-inline {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.panel-inline .panel-input {
+  flex: 1;
+  width: auto;
+}
+
+.panel-inline-right {
+  justify-content: flex-end;
+}
+
+.panel-btn {
+  border: none;
+  background: #6a5ae0;
+  color: #fff;
+  font-size: 12px;
+  border-radius: 8px;
+  padding: 6px 13px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.panel-btn-ghost {
+  background: rgba(0, 0, 0, 0.07);
+  color: #444;
+}
+
+.panel-hint {
+  font-size: 11px;
+  color: #6e6e78;
+}
+
+.panel-sub {
+  font-size: 10px;
+  color: #9a9aa4;
+  margin-top: -3px;
+}
+
+.panel-range {
+  width: 150px;
+  accent-color: #6a5ae0;
+}
+
+.panel-volume-num {
+  font-size: 12px;
+  width: 36px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.panel-chip {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 999px;
+  font-size: 12px;
+  padding: 4px 12px;
+  cursor: pointer;
+  color: #2c2c33;
+}
+
+.panel-chip-active {
+  background: #6a5ae0;
+  border-color: #6a5ae0;
+  color: #fff;
+}
+
+.panel-link {
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #2c2c33;
+  padding: 7px 4px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.panel-link:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.panel-link-arrow {
+  color: #9a9aa4;
+  font-size: 15px;
+}
+
+.panel-link-danger:hover {
+  background: rgba(220, 60, 60, 0.08);
+}

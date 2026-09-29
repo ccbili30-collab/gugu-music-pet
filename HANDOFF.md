@@ -40,7 +40,7 @@ npm run dev      # 启动（鸽子会出现在屏幕角落）
 
 > **2026-09-28 已全部完成**，实施记录如下，供后来者对照：
 
-1. **设置面板 ✅**：新设置窗 `src/renderer/settings.html` + `src/renderer/src/settings/SettingsApp.tsx`（四分区：LLM/天气城市/音量/角色包）。主进程新增 `src/main/settings.ts`（`settings:*` / `pet:pack:*` IPC）；`store.ts` 的 AppConfig 增加 `packId`；engine 启动时读持久化角色包，`pet:command` 新增 `pack` 分支；托盘和右键菜单都有入口。e2e：`scripts/testing/settings-e2e.mjs`（7 项全过）。
+1. **设置面板 ✅**（后升级为**托盘弹出面板**）：左键点击菜单栏托盘图标 → 弹出挂在图标下方的毛玻璃面板（`vibrancy: 'popover'`，失焦自动收起，Keepresso 式），顶部有实时播放状态卡；右键托盘仍是传统菜单（播放控制/登录/退出）。渲染层 `src/renderer/src/settings/SettingsApp.tsx`（四分区：LLM/天气城市/音量/角色包）。主进程 `src/main/settings.ts`（`settings:*` / `pet:pack:*` IPC）；`store.ts` 的 AppConfig 增加 `packId`；engine 启动时读持久化角色包，`pet:command` 新增 `pack` 分支。托盘面板显示/定位逻辑在 `tray.ts`（`toggleSettingsPanel`/`showSettingsPanel`，含 blur 后 300ms 内不重弹的防抖）。e2e：`scripts/testing/settings-e2e.mjs`（9 项全过）。
 2. **vitest 单测 ✅**：`tests/{physics,beat,drives}.test.ts` 共 33 用例（`npm test`）。vitest 配置在 `vitest.config.ts`（node 环境，三个目标文件都是纯函数无 electron 依赖）。
 3. **electron-builder 打 dmg ✅**：配置 `electron-builder.yml`；麦克风权限双保险——`build/entitlements.mac.plist`（audio-input + Electron 三件套）+ Info.plist `NSMicrophoneUsageDescription`（extendInfo），另加 `LSUIElement`（无 Dock 图标）。角色包走 asar 内 `out/renderer/characters`（vite 自动拷 public，packs.ts 打包路径本来就对，无需改）。图标由 `scripts/make-icon.mjs` 从鸽子 idle 帧生成 `build/icon.png`（1024，纯 Node PNG 编码器）。`npm run dist` = bake + build + electron-builder。**实测**：dmg 138MB，打包版 CDP 冒烟通过（packsList/真实搜索/设置窗/天气持久化）。注意：本机无 Developer ID 证书未签名，Gatekeeper 需右键打开（README 已写）。
 4. **README ✅**：评委向 `README.md` + `docs/`（demo.gif 由 `scripts/testing/capture-demo.mjs` 用 CDP Page.startScreencast 录制后 ffmpeg-static 转制，无需屏幕录制权限；settings.png / chat.png 为 Page.captureScreenshot 截图）。

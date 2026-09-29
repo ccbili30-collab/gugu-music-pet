@@ -26,8 +26,8 @@ body {
 /* ---------- AI 气泡（右侧） ---------- */
 .bubbles {
   position: absolute;
-  left: 306px;
-  bottom: 262px; /* 话筒圆球顶(窗口 y≈166)之上，避免短气泡被球压住 */
+  left: 302px; /* 宠物画面右缘(298)旁，水平贴头 */
+  bottom: 156px; /* 容器底 y≈264，单行气泡正对头部，多行向上伸展 */
   width: 234px;
   display: flex;
   flex-direction: column;
@@ -235,8 +235,8 @@ body {
 /* ---------- 话筒圆球（宠物右侧） ---------- */
 .mic-orb {
   position: absolute;
-  width: 46px;
-  height: 46px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   border: none;
   padding: 0;

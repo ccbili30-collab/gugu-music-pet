@@ -19,15 +19,15 @@ export function computeRegions({ bubbleCount, menu, hasTrack, hotOpen }: RegionI
   const rects: UiRect[] = []
   // 宠物本体（精灵 96px + 少量余量）
   rects.push({ x: LAYOUT.anchorX - 60, y: LAYOUT.anchorY - 104, w: 120, h: 110 })
-  // 话筒圆球
-  rects.push({ x: LAYOUT.anchorX + 56, y: LAYOUT.anchorY - 150, w: 46, h: 46 })
+  // 话筒圆球（右下角脚边，36px）
+  rects.push({ x: LAYOUT.anchorX + 52, y: LAYOUT.anchorY - 32, w: 40, h: 40 })
   if (hasTrack) {
     // 迷你播放器（宠物头顶）
     rects.push({ x: LAYOUT.anchorX - 112, y: LAYOUT.anchorY - 150, w: 244, h: 46 })
   }
   if (bubbleCount > 0) {
-    // 右侧气泡带（bottom:262 → 容器底 y≈158，向上伸展）
-    rects.push({ x: 300, y: 6, w: 252, h: 158 })
+    // 右侧气泡带（贴头部右侧：容器底 y≈264，多行向上伸展）
+    rects.push({ x: 296, y: 40, w: 252, h: 228 })
   }
   if (hotOpen) {
     // 左侧热评卡

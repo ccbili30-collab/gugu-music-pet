@@ -33,6 +33,13 @@ export interface LoginState {
   vip?: boolean
 }
 
+export interface QrInfo {
+  key: string
+  qrimg: string
+}
+
+export type QrPollStatus = 'waiting' | 'scanned' | 'confirmed' | 'expired'
+
 interface SodaSong {
   id: string
   name: string
@@ -71,8 +78,67 @@ function toTrack(s: SodaSong): Track {
 /** 随机来一首用的热词池（汽水无个性化推荐接口） */
 const HOT_QUERIES = ['热门金曲', '华语流行', '经典老歌', '轻音乐', '影视原声', '抖音热歌']
 
+// 汽水护照（抖音账号体系）二维码登录：纯 HTTP 无签名（协议同 PopDownloader 社区实现）
+const AUTH_BASE = 'https://api.qishui.com'
+const AUTH_QUERY = {
+  passport_jssdk_version: '2.4.13',
+  passport_jssdk_type: 'normal',
+  is_from_ttaccountsdk: '1',
+  aid: '386088',
+  next: 'https://api.qishui.com'
+}
+
 export class SodaProvider {
   readonly name = 'soda'
+
+  /** 获取登录二维码（抖音 App 扫码） */
+  async createQr(): Promise<QrInfo> {
+    const q = new URLSearchParams(AUTH_QUERY)
+    const res = await fetch(`${AUTH_BASE}/passport/web/get_qrcode/?${q}`, {
+      signal: AbortSignal.timeout(10_000)
+    })
+    const body = (await res.json()) as { data?: { token?: string; qrcode?: string } }
+    if (!body.data?.token || !body.data.qrcode) throw new Error('get_qrcode failed')
+    return { key: body.data.token, qrimg: body.data.qrcode }
+  }
+
+  /** 轮询扫码状态；confirmed 时从 Set-Cookie 提取 sessionid */
+  async pollQr(token: string): Promise<{ status: QrPollStatus; cookie?: string }> {
+    const q = new URLSearchParams({ ...AUTH_QUERY, iid: '27960026095955' })
+    const body = new URLSearchParams({
+      need_logo: 'false',
+      need_short_url: 'false',
+      is_frontier: 'true',
+      token,
+      is_new_login: '1',
+      next: 'https://api.qishui.com'
+    })
+    const res = await fetch(`${AUTH_BASE}/passport/web/check_qrconnect/?${q}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body,
+      signal: AbortSignal.timeout(10_000)
+    })
+    const setCookies =
+      typeof res.headers.getSetCookie === 'function'
+        ? res.headers.getSetCookie()
+        : res.headers.get('set-cookie')
+          ? [res.headers.get('set-cookie') as string]
+          : []
+    let sessionid = ''
+    for (const item of setCookies) {
+      const m = /sessionid=([^;]+)/.exec(item)
+      if (m) sessionid = m[1]
+    }
+    const payload = (await res.json()) as { data?: { status?: string; error_code?: number } }
+    const st = payload.data?.status
+    if (st === 'confirmed' && sessionid) {
+      return { status: 'confirmed', cookie: `sessionid=${sessionid};` }
+    }
+    if (st === 'scanned') return { status: 'scanned' }
+    if (payload.data?.error_code && payload.data.error_code !== 0 && !st) return { status: 'expired' }
+    return { status: 'waiting' }
+  }
 
   async search(keyword: string, limit = 12): Promise<Track[]> {
     const res = await sidecarFetch(

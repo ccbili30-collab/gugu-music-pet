@@ -74,6 +74,8 @@ export interface GuguApi {
   openSettings(): void
   quit(): void
   music: {
+    qrCreate(): Promise<{ key: string; qrimg: string }>
+    qrPoll(key: string): Promise<{ status: string; nickname?: string }>
     cookieGet(): Promise<string>
     cookieSet(cookie: string): Promise<{ ok: boolean }>
     loginState(): Promise<LoginStateInfo>
@@ -143,6 +145,8 @@ const api: GuguApi = {
   openSettings: () => ipcRenderer.send('settings:open'),
   quit: () => ipcRenderer.send('app:quit'),
   music: {
+    qrCreate: () => ipcRenderer.invoke('music:qr:create'),
+    qrPoll: (key) => ipcRenderer.invoke('music:qr:poll', key),
     cookieGet: () => ipcRenderer.invoke('music:cookie:get'),
     cookieSet: (cookie) => ipcRenderer.invoke('music:cookie:set', cookie),
     loginState: () => ipcRenderer.invoke('music:login:state'),

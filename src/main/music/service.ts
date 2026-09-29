@@ -155,7 +155,24 @@ export class MusicService {
     }
   }
 
-  // ---- 登录（汽水：粘贴 Cookie，无扫码接口） ----
+  // ---- 登录（汽水：抖音 App 扫码 / Cookie 粘贴兜底） ----
+
+  async createQr(): Promise<{ key: string; qrimg: string }> {
+    return this.provider.createQr()
+  }
+
+  async pollQr(key: string): Promise<{ status: string; nickname?: string }> {
+    const r = await this.provider.pollQr(key)
+    if (r.status === 'confirmed' && r.cookie) {
+      await this.provider.applyCookie(r.cookie)
+      this.cookie = r.cookie
+      this.login = { loggedIn: true, nickname: '汽水听众' }
+      this.persist()
+      this.fireState()
+      return { status: 'confirmed', nickname: this.login.nickname }
+    }
+    return { status: r.status }
+  }
 
   /** 登录窗读取当前 cookie（回显用，明文本地窗口，无脱敏必要） */
   getSodaCookie(): string {
@@ -191,6 +208,8 @@ export const musicService = new MusicService()
 
 export function registerMusicIpc(): void {
   const api = musicService.api
+  ipcMain.handle('music:qr:create', () => musicService.createQr())
+  ipcMain.handle('music:qr:poll', (_e, key: string) => musicService.pollQr(key))
   ipcMain.handle('music:cookie:get', () => musicService.getSodaCookie())
   ipcMain.handle('music:cookie:set', (_e, cookie: string) => musicService.setSodaCookie(cookie))
   ipcMain.handle('music:login:state', () => api.loginState())

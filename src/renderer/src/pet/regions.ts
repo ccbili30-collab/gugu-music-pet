@@ -26,8 +26,8 @@ export function computeRegions({ bubbleCount, menu, hasTrack, hotOpen }: RegionI
     rects.push({ x: LAYOUT.anchorX - 112, y: LAYOUT.anchorY - 150, w: 244, h: 46 })
   }
   if (bubbleCount > 0) {
-    // 右侧气泡带
-    rects.push({ x: 300, y: 60, w: 252, h: 150 })
+    // 右侧气泡带（bottom:262 → 容器底 y≈158，向上伸展）
+    rects.push({ x: 300, y: 6, w: 252, h: 158 })
   }
   if (hotOpen) {
     // 左侧热评卡

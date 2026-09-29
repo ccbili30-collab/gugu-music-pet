@@ -27,7 +27,7 @@ body {
 .bubbles {
   position: absolute;
   left: 306px;
-  bottom: 214px;
+  bottom: 262px; /* 话筒圆球顶(窗口 y≈166)之上，避免短气泡被球压住 */
   width: 234px;
   display: flex;
   flex-direction: column;

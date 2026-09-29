@@ -91,14 +91,18 @@ export function LoginApp(): JSX.Element {
   return (
     <div className="login-app">
       <div className="login-title">🎵 汽水音乐</div>
-      <div className="login-sub">抖音 App 扫码登录，解锁完整曲库</div>
+      <div className="login-sub">免登录即可搜歌播放；登录仅为解锁完整曲库（可选）</div>
 
       <div className="login-qr-box">
         {phase === 'loading' && <div className="login-hint">正在获取二维码…</div>}
         {(phase === 'show-qr' || phase === 'scanned') && qrimg && (
           <>
             <img className={`login-qr ${phase === 'scanned' ? 'qr-dim' : ''}`} src={qrimg} alt="登录二维码" />
-            <div className="login-hint">{phase === 'scanned' ? '已扫码，请在抖音上确认 ✓' : '打开抖音 App 扫一扫'}</div>
+            <div className="login-hint">
+              {phase === 'scanned'
+                ? '已扫码，请在抖音上确认 ✓'
+                : '打开抖音 App 扫一扫（若扫码后提示 404，是汽水官方确认页暂不可用，请改用下方 Cookie 登录）'}
+            </div>
           </>
         )}
         {phase === 'success' && (

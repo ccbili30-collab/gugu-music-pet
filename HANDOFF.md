@@ -63,7 +63,8 @@ npm run dev      # 启动（鸽子会出现在屏幕角落）
   clickthrough.ts   ★macOS 透明窗点击穿透：40ms 轮询光标 vs 渲染层上报的交互区域
   spawn.ts          出生点=屏幕角落+落点记忆(userData/pet-pos.json)
   tray.ts           动态菜单：当前歌/播放控制/登录/退出
-  music/provider.ts NetEase API 封装（取链带 403 预检+重取）
+  music/provider.ts 汽水 Provider（go-music-api sidecar HTTP 封装；Track.id 为 string）
+  music/sidecar.ts   汽水 sidecar 子进程管理（PORT=28080，就绪探测，二进制 sidecar/go-music-api 不入库）
   music/proxy.ts    music:// 流代理(undici fetch，解决 CORS 喂 AnalyserNode)
   music/service.ts  登录态持久化/队列/状态广播；换歌钩子→场景引擎
   agent/brain.ts    会话编排：tool-calling 循环(≤4轮)+记忆提取+驱动力+自主性+反射
@@ -109,6 +110,7 @@ npm run dev      # 启动（鸽子会出现在屏幕角落）
 - **网络**：国内直连 npm/github 会超时，.npmrc 已配镜像；gh push 若超时多重试。
 - **测试时别外放音乐**：所有自动化验证先执行 `window.__guguAudio.setMuted(true)`（静音但节拍分析照常）。CDP 调试：`npx electron-vite dev -- --remote-debugging-port=9222`，然后跑 `scripts/testing/*.mjs`（先起 `mock-llm.mjs`）。
 - **内存里的会话上下文**：重启后聊天历史从 userData/chat-history.json 恢复可见消息（工具调用细节不恢复）。
+- **★ 音乐源已从网易云迁到汽水（2026-09-29）**：汽水是字节私有接口，走本地 sidecar（github.com/guohuiyuan/go-music-api，`scripts/build-sidecar.sh` 编译，gitignore）。**三大坑**：① 歌曲 id 是 19 位大数，全链 Track.id 必须 string（过 Number 精度丢失，mock-llm 踩过）；② 汽水无扫码登录接口，登录窗是 Cookie 粘贴式（www.qishui.com F12 取 sessionid）；③ 汽水无热评接口，热评卡显示兜底文案。上游接口是逆向的，失效风险自担，demo 前务必跑一遍 music 链路。
 - **dev 与打包版不能同时跑**：Electron 按 productName 取 userData（都叫 "Gugu Music Pet"），单实例锁会直接踢掉后启动的那个。测打包版前先退掉 `npm run dev` 的实例（打包版二进制可加 `--remote-debugging-port=9223` 挂 CDP）。
 - **新机器环境**：这台机器 Node 装在 `~/.local/node`（symlink 到 `~/.local/bin`，已写入 zsh/bash profile）。非交互 shell 可能读不到 PATH，脚本里用绝对路径或先 `export PATH="$HOME/.local/bin:$PATH"`。
 - **★ Pixi hitArea 与 anchor 无关（拖不动的元凶）**：Sprite 的 hitArea 坐标系以 position 为原点，anchor 只影响纹理绘制偏移。本宠 sprite anchor=(0.5,1)（脚底中心），hitArea 曾写成 `Rectangle(0,0,w,h)`，判定框整体错位到画面右下方 → 点击鸽子永远不命中、拖拽/右键/摸头全部失效（穿透层正常放行了事件，但渲染层 hitTest 落空）。正确写法 `Rectangle(-w/2, -h, w, h)`，已在 engine.ts buildSprite 修正。验证拖拽别只调 physics 方法，跑 `scripts/testing/drag-e2e.mjs`（CDP 走真实事件管线）。

@@ -211,7 +211,7 @@ export default function App(): JSX.Element {
         }))
       : []),
     { label: '设置', icon: 'gear', onClick: () => window.gugu.openSettings() },
-    { label: '扫码登录网易云', icon: 'qr', onClick: () => window.gugu.openLogin() },
+    { label: '登录汽水音乐', icon: 'qr', onClick: () => window.gugu.openLogin() },
     { label: '再见', icon: 'power', onClick: () => window.gugu.quit() }
   ]
 

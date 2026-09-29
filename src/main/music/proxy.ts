@@ -1,4 +1,4 @@
-// music:// 流代理：把网易云 CDN 的音频流转发给渲染层 <audio>，
+// music:// 流代理：把音乐 CDN（现汽水 sidecar）的音频流转发给渲染层 <audio>，
 // 消除 CORS 限制（Web Audio AnalyserNode 需要干净的源）
 import { protocol } from 'electron'
 
@@ -32,8 +32,7 @@ export function handleMusicProtocol(): void {
       return new Response('bad url', { status: 400 })
     }
     const headers: Record<string, string> = {
-      'User-Agent': UA,
-      Referer: 'https://music.163.com/'
+      'User-Agent': UA
     }
     const range = request.headers.get('range')
     if (range) headers.Range = range

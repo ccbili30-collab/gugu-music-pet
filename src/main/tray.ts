@@ -93,10 +93,10 @@ function rebuildMenu(player: PlayerState | null, login: LoginState | null): void
   if (login?.loggedIn) {
     template.push(
       { label: `已登录：${login.nickname}`, enabled: false },
-      { label: '退出网易云登录', click: () => void logout() }
+      { label: '退出汽水登录', click: () => void logout() }
     )
   } else {
-    template.push({ label: '扫码登录网易云', click: () => createLoginWindow() })
+    template.push({ label: '登录汽水音乐', click: () => createLoginWindow() })
   }
   template.push(
     { type: 'separator' },

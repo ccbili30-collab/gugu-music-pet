@@ -8,6 +8,9 @@ files:
   - build/**/*
   - package.json
 asar: true
+extraResources:
+  - from: sidecar
+    to: sidecar
 mac:
   category: public.app-category.entertainment
   icon: build/icon.png

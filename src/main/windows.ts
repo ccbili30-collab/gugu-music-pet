@@ -123,8 +123,8 @@ export function createLoginWindow(): BrowserWindow {
     return loginWin
   }
   loginWin = new BrowserWindow({
-    width: 300,
-    height: 420,
+    width: 340,
+    height: 480,
     resizable: false,
     maximizable: false,
     fullscreenable: false,
@@ -132,7 +132,7 @@ export function createLoginWindow(): BrowserWindow {
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 12, y: 12 },
     backgroundColor: '#00000000',
-    title: '登录网易云',
+    title: '登录汽水音乐',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,

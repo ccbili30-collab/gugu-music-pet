@@ -216,7 +216,7 @@ export function SettingsApp(): JSX.Element {
         <span className="panel-link-arrow">›</span>
       </button>
       <button className="panel-link" onClick={() => window.gugu.openLogin()}>
-        <span>🔑 扫码登录网易云</span>
+        <span>🎵 登录汽水音乐</span>
         <span className="panel-link-arrow">›</span>
       </button>
 

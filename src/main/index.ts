@@ -4,6 +4,7 @@ import { createTray, refreshTray } from './tray'
 import { registerIpc } from './ipc'
 import { registerMusicScheme, handleMusicProtocol } from './music/proxy'
 import { musicService, registerMusicIpc } from './music/service'
+import { startSidecar, stopSidecar } from './music/sidecar'
 import { startClickThrough } from './clickthrough'
 import { registerAgentIpc } from './agent/ipc'
 
@@ -21,7 +22,12 @@ if (!gotLock) {
     if (process.platform === 'darwin') app.dock?.hide()
 
     handleMusicProtocol()
-    void musicService.init()
+    void startSidecar()
+      .then(() => musicService.init())
+      .catch((e) => {
+        console.error('[soda-sidecar] failed to start, music disabled:', e)
+        void musicService.init()
+      })
     registerMusicIpc()
 
     createPetWindow()
@@ -46,5 +52,8 @@ if (!gotLock) {
   })
 
   // Cmd+Q / 系统退出时放行窗口关闭
-  app.on('before-quit', () => setAppQuitting())
+  app.on('before-quit', () => {
+    setAppQuitting()
+    stopSidecar()
+  })
 }

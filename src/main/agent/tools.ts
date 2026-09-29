@@ -24,7 +24,7 @@ export function toolDefinitions(): ToolDef[] {
       type: 'function',
       function: {
         name: 'music_search',
-        description: '搜索网易云音乐歌曲。用于"放首歌""来点周杰伦"等任何找歌需求',
+        description: '搜索汽水音乐歌曲。用于"放首歌""来点周杰伦"等任何找歌需求',
         parameters: {
           type: 'object',
           properties: {
@@ -84,7 +84,7 @@ export function toolDefinitions(): ToolDef[] {
       type: 'function',
       function: {
         name: 'music_comments',
-        description: '拿当前歌曲（或指定 id）的网易云热门评论，用于聊歌、共鸣',
+        description: '拿当前歌曲（或指定 id）的热门评论，用于聊歌、共鸣（汽水源可能返回空）',
         parameters: {
           type: 'object',
           properties: { id: { type: 'number', description: '歌曲 id，缺省用当前播放的歌' }, limit: { type: 'number' } }
@@ -125,7 +125,7 @@ export async function dispatchTool(
         return { output: tracks.length ? `找到 ${tracks.length} 首：\n${fmtTracks(tracks)}` : '没搜到，换个关键词试试', tracks }
       }
       case 'music_play': {
-        let ids = (args.ids as number[] | undefined) ?? []
+        let ids = (args.ids as string[] | undefined) ?? []
         let tracks: Track[] = []
         if (ids.length) {
           tracks = await music.api.detail(ids)
@@ -160,7 +160,7 @@ export async function dispatchTool(
         return { output: `推荐 ${tracks.length} 首：\n${fmtTracks(tracks)}`, tracks }
       }
       case 'music_comments': {
-        const id = Number(args.id ?? music.api.currentState().track?.id ?? 0)
+        const id = String(args.id ?? music.api.currentState().track?.id ?? '')
         if (!id) return { output: '没有正在播放的歌，也没指定 id' }
         const comments: Comment[] = await music.api.comments(id, Number(args.limit ?? 4))
         return {

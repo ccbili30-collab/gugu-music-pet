@@ -1,8 +1,8 @@
-// 音乐服务：登录态持久化 + 搜索/取链/热评/歌词/推荐 + 播放器状态广播
+// 音乐服务：登录态持久化 + 搜索/取链/热评/歌词/推荐 + 播放器状态广播（汽水音乐源）
 import { app, ipcMain, BrowserWindow } from 'electron'
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { NetEaseProvider, type Track, type LoginState } from './provider'
+import { SodaProvider, type Track, type Comment, type LyricLine, type LoginState } from './provider'
 import { proxyStreamUrl } from './proxy'
 
 export interface PlayerState {
@@ -17,11 +17,11 @@ export interface PlayerState {
 }
 
 export interface MusicApi {
-  resolve(id: number): Promise<{ url: string | null; trial: boolean; error?: string }>
+  resolve(id: string): Promise<{ url: string | null; trial: boolean; error?: string }>
   search(q: string, limit?: number): Promise<Track[]>
-  detail(ids: number[]): Promise<Track[]>
-  comments(id: number, limit?: number): Promise<Awaited<ReturnType<NetEaseProvider['hotComments']>>>
-  lyric(id: number): Promise<Awaited<ReturnType<NetEaseProvider['lyric']>>>
+  detail(ids: string[]): Promise<Track[]>
+  comments(id: string, limit?: number): Promise<Comment[]>
+  lyric(id: string): Promise<LyricLine[]>
   recommend(): Promise<Track[]>
   loginState(): Promise<LoginState>
   queue(): Track[]
@@ -31,9 +31,8 @@ export interface MusicApi {
 const stateFile = (): string => join(app.getPath('userData'), 'music-state.json')
 
 export class MusicService {
-  private provider = new NetEaseProvider()
-  private cookie = ''
-  private anonCookie = ''
+  private provider = new SodaProvider()
+  private cookie = '' // 汽水 sessionid（可选；免登录也能搜大部分内容）
   private login: LoginState = { loggedIn: false }
   private queue: Track[] = []
   private player: PlayerState = {
@@ -60,6 +59,8 @@ export class MusicService {
       if (saved.cookie) {
         this.cookie = saved.cookie
         this.login = await this.provider.loginState(this.cookie)
+        // sidecar 重启后 cookie.json 丢失，恢复写回
+        void this.provider.applyCookie(this.cookie)
       }
       if (saved.queue) this.queue = saved.queue
       if (typeof saved.volume === 'number') this.player.volume = saved.volume
@@ -67,7 +68,6 @@ export class MusicService {
     } catch {
       /* 首次启动无存档 */
     }
-    if (!this.cookie) this.anonCookie = await this.provider.anonCookie()
     this.fireState()
   }
 
@@ -97,23 +97,19 @@ export class MusicService {
   get api(): MusicApi {
     return {
       resolve: async (id) => {
-        const r = await this.provider.songUrl(id, this.activeCookie())
-        if (!r.url) return { url: null, trial: false, error: r.trial ? 'vip' : 'unavailable' }
+        const r = await this.provider.songUrl(id)
+        if (!r.url) return { url: null, trial: false, error: 'unavailable' }
         return { url: proxyStreamUrl(r.url), trial: r.trial }
       },
-      search: (q, limit) => this.provider.search(q, limit, this.activeCookie()),
-      detail: (ids) => this.provider.songDetail(ids, this.activeCookie()),
-      comments: (id, limit) => this.provider.hotComments(id, limit, this.activeCookie()),
-      lyric: (id) => this.provider.lyric(id, this.activeCookie()),
-      recommend: () => this.provider.recommend(this.activeCookie()),
+      search: (q, limit) => this.provider.search(q, limit),
+      detail: (ids) => this.provider.songDetail(ids),
+      comments: (_id, _limit) => this.provider.hotComments(),
+      lyric: (id) => this.provider.lyric(id),
+      recommend: () => this.provider.recommend(),
       loginState: async () => this.login,
       queue: () => this.queue,
       currentState: () => this.player
     }
-  }
-
-  private activeCookie(): string {
-    return this.cookie || this.anonCookie
   }
 
   // ---- 播放器状态（渲染进程 audio 元素上报） ----
@@ -135,7 +131,7 @@ export class MusicService {
     // 换歌 → 场景引擎（AI 歌评/emo 维护），避免 import 环用动态加载
     if (state.track && state.track.id !== prevTrackId && prevTrackId !== undefined) {
       void import('../agent/scenes').then(({ sceneEngine }) => {
-        void sceneEngine.onTrackChange(state.track as { id: number; name: string; artists: string }, sceneEngine.mode !== 'emo')
+        void sceneEngine.onTrackChange(state.track as { id: string; name: string; artists: string }, sceneEngine.mode !== 'emo')
       })
     }
   }
@@ -159,22 +155,24 @@ export class MusicService {
     }
   }
 
-  // ---- 登录 ----
+  // ---- 登录（汽水：粘贴 Cookie，无扫码接口） ----
 
-  async createQr(): Promise<{ key: string; qrimg: string }> {
-    return this.provider.createQr(this.activeCookie())
+  /** 登录窗读取当前 cookie（回显用，明文本地窗口，无脱敏必要） */
+  getSodaCookie(): string {
+    return this.cookie
   }
 
-  async pollQr(key: string): Promise<{ status: string; nickname?: string }> {
-    const r = await this.provider.pollQr(key, this.activeCookie())
-    if (r.status === 'confirmed' && r.cookie) {
-      this.cookie = r.cookie
-      this.login = await this.provider.loginState(this.cookie)
-      this.persist()
-      this.fireState()
-      return { status: 'confirmed', nickname: this.login.nickname }
-    }
-    return { status: r.status }
+  /** 保存汽水 cookie：写 sidecar（生效）+ 本地持久化 */
+  async setSodaCookie(cookie: string): Promise<{ ok: boolean }> {
+    const c = cookie.trim()
+    if (!c) return { ok: false }
+    const ok = await this.provider.applyCookie(c)
+    if (!ok) return { ok: false }
+    this.cookie = c
+    this.login = { loggedIn: true, nickname: '汽水听众' }
+    this.persist()
+    this.fireState()
+    return { ok: true }
   }
 
   async logout(): Promise<void> {
@@ -193,15 +191,15 @@ export const musicService = new MusicService()
 
 export function registerMusicIpc(): void {
   const api = musicService.api
-  ipcMain.handle('music:qr:create', () => musicService.createQr())
-  ipcMain.handle('music:qr:poll', (_e, key: string) => musicService.pollQr(key))
+  ipcMain.handle('music:cookie:get', () => musicService.getSodaCookie())
+  ipcMain.handle('music:cookie:set', (_e, cookie: string) => musicService.setSodaCookie(cookie))
   ipcMain.handle('music:login:state', () => api.loginState())
   ipcMain.handle('music:login:logout', () => musicService.logout())
   ipcMain.handle('music:search', (_e, q: string, limit?: number) => api.search(q, limit))
-  ipcMain.handle('music:resolve', (_e, id: number) => api.resolve(id))
-  ipcMain.handle('music:detail', (_e, ids: number[]) => api.detail(ids))
-  ipcMain.handle('music:comments', (_e, id: number, limit?: number) => api.comments(id, limit))
-  ipcMain.handle('music:lyric', (_e, id: number) => api.lyric(id))
+  ipcMain.handle('music:resolve', (_e, id: string) => api.resolve(id))
+  ipcMain.handle('music:detail', (_e, ids: string[]) => api.detail(ids))
+  ipcMain.handle('music:comments', (_e, id: string, limit?: number) => api.comments(id, limit))
+  ipcMain.handle('music:lyric', (_e, id: string) => api.lyric(id))
   ipcMain.handle('music:recommend', () => api.recommend())
   ipcMain.handle('music:queue:get', () => api.queue())
   ipcMain.handle('music:player:state', () => api.currentState())

@@ -14,7 +14,7 @@ export class AudioEngine {
   private actx: AudioContext | null = null
   private analyser: AnalyserNode | null = null
   private reportTimer = 0
-  private lastErrorTrackId = 0
+  private lastErrorTrackId = ''
 
   /** 播放失败等需要气泡反馈的事件 */
   onError: ((msg: string) => void) | null = null
@@ -144,7 +144,7 @@ export class AudioEngine {
     if (!r.url) {
       this.onError?.(
         r.error === 'vip'
-          ? `《${track.name}》需要网易云 VIP 才能听完整的哦`
+          ? `《${track.name}》需要汽水 VIP 才能听完整的哦`
           : `《${track.name}》暂时放不了，咕咕帮你跳下一首…`
       )
       window.setTimeout(() => {

@@ -6,7 +6,7 @@ export interface ScreenInfo {
 }
 
 export interface Track {
-  id: number
+  id: string
   name: string
   artists: string
   album?: string
@@ -74,15 +74,15 @@ export interface GuguApi {
   openSettings(): void
   quit(): void
   music: {
-    qrCreate(): Promise<{ key: string; qrimg: string }>
-    qrPoll(key: string): Promise<{ status: string; nickname?: string }>
+    cookieGet(): Promise<string>
+    cookieSet(cookie: string): Promise<{ ok: boolean }>
     loginState(): Promise<LoginStateInfo>
     logout(): Promise<void>
     search(q: string, limit?: number): Promise<Track[]>
-    resolve(id: number): Promise<{ url: string | null; trial: boolean; error?: string }>
-    detail(ids: number[]): Promise<Track[]>
-    comments(id: number, limit?: number): Promise<Comment[]>
-    lyric(id: number): Promise<{ time: number; text: string }[]>
+    resolve(id: string): Promise<{ url: string | null; trial: boolean; error?: string }>
+    detail(ids: string[]): Promise<Track[]>
+    comments(id: string, limit?: number): Promise<Comment[]>
+    lyric(id: string): Promise<{ time: number; text: string }[]>
     recommend(): Promise<Track[]>
     queueGet(): Promise<Track[]>
     playerState(): Promise<PlayerState>
@@ -143,8 +143,8 @@ const api: GuguApi = {
   openSettings: () => ipcRenderer.send('settings:open'),
   quit: () => ipcRenderer.send('app:quit'),
   music: {
-    qrCreate: () => ipcRenderer.invoke('music:qr:create'),
-    qrPoll: (key) => ipcRenderer.invoke('music:qr:poll', key),
+    cookieGet: () => ipcRenderer.invoke('music:cookie:get'),
+    cookieSet: (cookie) => ipcRenderer.invoke('music:cookie:set', cookie),
     loginState: () => ipcRenderer.invoke('music:login:state'),
     logout: () => ipcRenderer.invoke('music:login:logout'),
     search: (q, limit) => ipcRenderer.invoke('music:search', q, limit),

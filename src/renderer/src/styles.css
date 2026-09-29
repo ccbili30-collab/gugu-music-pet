@@ -483,6 +483,24 @@ body {
   font-size: 40px;
 }
 
+.login-cookie-input {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-family: ui-monospace, Menlo, monospace;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f5f7;
+  outline: none;
+  resize: none;
+  box-sizing: border-box;
+}
+
+.login-cookie-input:focus {
+  border-color: #7c6cf0;
+}
+
 .login-retry {
   border: none;
   background: #6a5ae0;

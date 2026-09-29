@@ -42,7 +42,7 @@ ${KAOMOJI_POOL}
 ## 当前状态
 - 现在是 ${timeDesc}
 - ${trackLine}
-- 网易云登录：${login.loggedIn ? `已登录（${login.nickname}${login.vip ? '，VIP' : ''}）` : '未登录（只能搜到非 VIP 歌，建议主人扫码登录）'}
+- 汽水音乐登录：${login.loggedIn ? `已登录（${login.nickname}）` : '未登录（免登录也能搜大部分歌，VIP 曲库需要主人在设置里粘贴 Cookie）'}
 
 ${memoryContext}`
 }

@@ -26,7 +26,7 @@ class SceneEngine {
   private lastHumAt = 0
   private lastResonanceAt = 0
   private lastCommentAt = 0
-  private lastCommentTrackId = 0
+  private lastCommentTrackId = ''
   private inviteCooldownUntil = 0
   private timer: NodeJS.Timeout | null = null
   private weatherTimer: NodeJS.Timeout | null = null
@@ -50,7 +50,7 @@ class SceneEngine {
   }
 
   /** 换歌钩子（music service 调用）：normal 模式 40% 概率 AI 歌评；emo 模式不评歌 */
-  async onTrackChange(track: { id: number; name: string; artists: string }, userDriven: boolean): Promise<void> {
+  async onTrackChange(track: { id: string; name: string; artists: string }, userDriven: boolean): Promise<void> {
     if (this.mode === 'emo') return
     if (!userDriven && this.mode === 'normal') return
     const now = Date.now()

@@ -29,7 +29,7 @@ const server = http.createServer((req, res) => {
       // 第二轮：从搜索结果里挑第一首播放
       const toolMsg = msgs.find((m) => m.role === 'tool' && String(m.content).includes('找到'))
       const idMatch = /\[id:(\d+)\]/.exec(String(toolMsg.content))
-      const id = idMatch ? Number(idMatch[1]) : 3440441479
+      const id = idMatch ? idMatch[1] : '3440441479' // 汽水 id 是 19 位大数，绝不能过 Number
       out = {
         content: null,
         tool_calls: [

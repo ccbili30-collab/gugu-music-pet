@@ -13,7 +13,7 @@ export function HotComments({ open, onClose }: { open: boolean; onClose: () => v
   useEffect(() => {
     if (!open) return
     let cancelled = false
-    const load = async (trackId: number, name: string): Promise<void> => {
+    const load = async (trackId: string, name: string): Promise<void> => {
       try {
         const cs = await window.gugu.music.comments(trackId, 8)
         if (!cancelled) {
@@ -66,7 +66,7 @@ export function HotComments({ open, onClose }: { open: boolean; onClose: () => v
           </div>
         </div>
       ) : (
-        <div className="hc-card hc-empty-card">还没有热评…</div>
+        <div className="hc-card hc-empty-card">这首歌暂时没有热评…<br />换首热门歌试试？</div>
       )}
       <div className="hc-dots">
         {comments.slice(0, 8).map((x, i) => (

@@ -150,6 +150,8 @@ export default function App(): JSX.Element {
         return
       }
       engineRef.current = engine
+      // 调试/自动化钩子挂活实例（CDP 观察/驱动拖拽、节拍等）
+      ;(window as unknown as Record<string, unknown>).__guguEngine = engine
     })
     const offMenu = bus.on('menu', (p) => setMenu(p))
     const offClose = bus.on('closeMenu', () => setMenu(null))

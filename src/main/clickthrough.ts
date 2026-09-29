@@ -33,6 +33,7 @@ export function setDragging(d: boolean): void {
 function setIgnore(v: boolean): void {
   if (v === ignoring) return
   ignoring = v
+  console.log('[clickthrough] ignoreMouseEvents =', v)
   getPetWindow()?.setIgnoreMouseEvents(v)
 }
 

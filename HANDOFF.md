@@ -111,6 +111,8 @@ npm run dev      # 启动（鸽子会出现在屏幕角落）
 - **内存里的会话上下文**：重启后聊天历史从 userData/chat-history.json 恢复可见消息（工具调用细节不恢复）。
 - **dev 与打包版不能同时跑**：Electron 按 productName 取 userData（都叫 "Gugu Music Pet"），单实例锁会直接踢掉后启动的那个。测打包版前先退掉 `npm run dev` 的实例（打包版二进制可加 `--remote-debugging-port=9223` 挂 CDP）。
 - **新机器环境**：这台机器 Node 装在 `~/.local/node`（symlink 到 `~/.local/bin`，已写入 zsh/bash profile）。非交互 shell 可能读不到 PATH，脚本里用绝对路径或先 `export PATH="$HOME/.local/bin:$PATH"`。
+- **★ Pixi hitArea 与 anchor 无关（拖不动的元凶）**：Sprite 的 hitArea 坐标系以 position 为原点，anchor 只影响纹理绘制偏移。本宠 sprite anchor=(0.5,1)（脚底中心），hitArea 曾写成 `Rectangle(0,0,w,h)`，判定框整体错位到画面右下方 → 点击鸽子永远不命中、拖拽/右键/摸头全部失效（穿透层正常放行了事件，但渲染层 hitTest 落空）。正确写法 `Rectangle(-w/2, -h, w, h)`，已在 engine.ts buildSprite 修正。验证拖拽别只调 physics 方法，跑 `scripts/testing/drag-e2e.mjs`（CDP 走真实事件管线）。
+- **StrictMode 双挂载与调试钩子**：dev 下 React StrictMode 会挂载两次引擎，`window.__guguEngine` 若在 engine init 里赋值会被后完成的僵尸实例覆盖（app=null）。现在由 App.tsx 在确认活实例后挂载；engine.destroy() 会移除 window 级 pointer 监听（匿名监听无法移除，曾泄漏）。
 
 ## 比赛演示动线（可直接照着演）
 

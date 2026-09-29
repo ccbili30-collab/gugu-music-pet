@@ -156,8 +156,7 @@ export class PetEngine {
     })
 
     this.lastTime = performance.now()
-    // 调试钩子（CDP/控制台观察节拍与状态）
-    ;(window as unknown as Record<string, unknown>).__guguEngine = this
+    // 调试钩子由 App.tsx 挂载（活实例才挂，避免 StrictMode 双挂载时被僵尸实例覆盖）
     this.loop(this.lastTime)
   }
 
@@ -168,7 +167,9 @@ export class PetEngine {
     this.sprite.anchor.set(0.5, 1)
     this.sprite.scale.set(this.loaded.scale)
     this.sprite.eventMode = 'static'
-    this.sprite.hitArea = new Rectangle(0, 0, frameSize[0], frameSize[1])
+    // hitArea 用的是以 position（脚底中心）为原点的本地空间，与 anchor 无关：
+    // anchor(0.5,1) 时画面在 (-w/2,-h)-(w/2,0)，判定框必须对齐这里
+    this.sprite.hitArea = new Rectangle(-frameSize[0] / 2, -frameSize[1], frameSize[0], frameSize[1])
     this.sprite.cursor = 'grab'
     this.motionContainer.addChild(this.sprite)
     // 交互挂到新 sprite 上
@@ -317,8 +318,12 @@ export class PetEngine {
 
     if (this.windowListenersBound) return
     this.windowListenersBound = true
+    window.addEventListener('pointermove', this.onWindowPointerMove)
+    window.addEventListener('pointerup', this.onWindowPointerUp)
+  }
 
-    window.addEventListener('pointermove', (e) => {
+  private onWindowPointerMove = (e: PointerEvent): void => {
+    {
       if (this.pointerDownAt === 0) return
       const w = this.worldPointer(e)
       if (!this.pointerMoved && Math.hypot(w.x - this.pointerDownPos.x, w.y - this.pointerDownPos.y) > 8) {
@@ -327,7 +332,7 @@ export class PetEngine {
         this.physics.mode = 'drag'
         this.walking = null
         this.minorAction = null
-        sprite.cursor = 'grabbing'
+        this.sprite.cursor = 'grabbing'
         window.gugu.setDragging(true)
         window.gugu.emitEvent('drag_start')
       }
@@ -343,9 +348,11 @@ export class PetEngine {
         this.physics.x += (tx - this.physics.x) * k
         this.physics.y += (ty - this.physics.y) * k
       }
-    })
+    }
+  }
 
-    window.addEventListener('pointerup', (e) => {
+  private onWindowPointerUp = (e: PointerEvent): void => {
+    {
       if (this.pointerDownAt === 0) return
       const downAt = this.pointerDownAt
       this.pointerDownAt = 0
@@ -353,7 +360,7 @@ export class PetEngine {
 
       if (this.dragging) {
         this.dragging = false
-        sprite.cursor = 'grab'
+        this.sprite.cursor = 'grab'
         window.gugu.setDragging(false)
         // 由最近 150ms 采样估计投掷速度
         const recent = this.samples.filter((s) => now - s.t < 160)
@@ -387,7 +394,7 @@ export class PetEngine {
           window.gugu.emitEvent('click')
         }
       }
-    })
+    }
   }
 
   // ---- 公共指令（右键菜单 / 大脑 M4） ----
@@ -426,6 +433,8 @@ export class PetEngine {
 
   destroy(): void {
     cancelAnimationFrame(this.raf)
+    window.removeEventListener('pointermove', this.onWindowPointerMove)
+    window.removeEventListener('pointerup', this.onWindowPointerUp)
     this.app.destroy(true, { children: true })
   }
 

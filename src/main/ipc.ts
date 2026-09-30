@@ -1,5 +1,5 @@
 import { ipcMain, screen, app } from 'electron'
-import { getPetWindow, createChatWindow, createLoginWindow, PET_WINDOW, setAppQuitting } from './windows'
+import { createChatWindow, createLoginWindow, fitPetWindow, setAppQuitting } from './windows'
 import { showSettingsPanel } from './tray'
 import { registerPacksIpc } from './packs'
 import { setRegions, setDragging } from './clickthrough'
@@ -14,14 +14,14 @@ export function registerIpc(): void {
   registerPacksIpc()
   registerSpawnIpc()
   registerSettingsIpc()
-  // 渲染进程物理循环 → 移动宠物窗口（坐标为宠物脚底点的屏幕坐标）
-  ipcMain.on('pet:move', (_e, x: number, y: number) => {
-    const win = getPetWindow()
-    if (!win) return
-    const wx = Math.round(x - PET_WINDOW.anchorX)
-    const wy = Math.round(y - PET_WINDOW.anchorY)
-    const [cx, cy] = win.getPosition()
-    if (cx !== wx || cy !== wy) win.setPosition(wx, wy, false)
+  // 宠物窗贴满工作区（跨屏/分辨率变化时由渲染层请求重设）
+  ipcMain.on('pet:fit', (_e, wa: { x: number; y: number; width: number; height: number }) => {
+    if (
+      Number.isFinite(wa?.x) && Number.isFinite(wa?.y) && Number.isFinite(wa?.width) && Number.isFinite(wa?.height) &&
+      wa.width > 0 && wa.height > 0
+    ) {
+      fitPetWindow(wa)
+    }
   })
 
   // 查询某点所在/最近的显示器工作区（用于物理边界）

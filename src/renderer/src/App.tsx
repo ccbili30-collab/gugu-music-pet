@@ -58,17 +58,44 @@ export default function App(): JSX.Element {
     return off
   }, [])
 
-  // 交互区域上报（点击穿透用）
+  // ---- 全屏窗模式：跟随层 + 穿透区域随宠物移动 ----
+  const followRef = useRef<HTMLDivElement>(null)
+  const uiRef = useRef({ bubbleCount: 0, menu: null as { x: number; y: number; items: number } | null, hasTrack: false, hotOpen: false })
+  uiRef.current = { bubbleCount: bubbles.length, menu: menu ? { x: menu.x, y: menu.y, items: 13 + packs.length } : null, hasTrack, hotOpen }
+
   useEffect(() => {
-    reportRegions(
-      computeRegions({
-        bubbleCount: bubbles.length,
-        menu: menu ? { x: menu.x, y: menu.y, items: 11 + packs.length } : null,
-        hasTrack,
-        hotOpen
-      })
-    )
-  }, [bubbles.length, menu, hasTrack, packs.length, hotOpen])
+    let lastReport = 0
+    const report = (force = false): void => {
+      const eng = engineRef.current
+      if (!eng) return
+      const now = performance.now()
+      if (!force && now - lastReport < 120) return
+      lastReport = now
+      const { x, y } = eng.petLocal
+      reportRegions(computeRegions({ petX: x, petY: y, ...uiRef.current }))
+    }
+    // 引擎每帧回调：跟随层 DOM 直改（不触发 React 渲染），穿透区域节流上报
+    const attach = (): void => {
+      const eng = engineRef.current
+      if (!eng) {
+        window.setTimeout(attach, 200)
+        return
+      }
+      eng.onPetMoved = (lx, ly) => {
+        if (followRef.current) followRef.current.style.transform = `translate(${lx}px, ${ly}px)`
+        report()
+      }
+      report(true)
+    }
+    attach()
+    // UI 状态变化时立即重报
+    const t = window.setInterval(() => report(true), 500)
+    return () => {
+      window.clearInterval(t)
+      const eng = engineRef.current
+      if (eng) eng.onPetMoved = null
+    }
+  }, [])
 
   // 主进程 → 宠物气泡（大脑回复/歌评/共鸣/邀请）
   useEffect(() => {
@@ -223,16 +250,18 @@ export default function App(): JSX.Element {
     <div className={`overlay${sceneMode === 'emo' ? ' scene-emo' : ''}`}>
       <div ref={hostRef} className="stage" />
       {sceneMode === 'emo' && <div className="emo-vignette" />}
-      <Bubbles
-        items={bubbles}
-        onInvite={(accept) => {
-          if (accept) window.gugu.sceneAccept()
-          else window.gugu.sceneDecline()
-          setBubbles((cur) => cur.filter((b) => b.kind !== 'invite'))
-        }}
-      />
-      <MiniPlayer engine={audio} micOn={micOn} onMicToggle={() => void toggleMic(mic)} />
-      <HotComments open={hotOpen} onClose={() => setHotOpen(false)} />
+      <div ref={followRef} className="follow-layer">
+        <Bubbles
+          items={bubbles}
+          onInvite={(accept) => {
+            if (accept) window.gugu.sceneAccept()
+            else window.gugu.sceneDecline()
+            setBubbles((cur) => cur.filter((b) => b.kind !== 'invite'))
+          }}
+        />
+        <MiniPlayer engine={audio} micOn={micOn} onMicToggle={() => void toggleMic(mic)} />
+        <HotComments open={hotOpen} onClose={() => setHotOpen(false)} />
+      </div>
       {menu && (
         <ContextMenu
           x={menu.x}

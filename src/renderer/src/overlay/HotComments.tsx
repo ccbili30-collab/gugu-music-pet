@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Comment } from '../../../preload/index'
-import { LAYOUT } from '../pet/types'
 
 /** 左侧热评卡：自动轮播（hover 暂停），播放当前歌的热评 */
 export function HotComments({ open, onClose }: { open: boolean; onClose: () => void }): JSX.Element {
@@ -50,7 +49,7 @@ export function HotComments({ open, onClose }: { open: boolean; onClose: () => v
   const c = comments[idx]
 
   return (
-    <div className="hot-comments" style={{ right: LAYOUT.windowW - LAYOUT.anchorX + 70 }} onMouseEnter={() => (hovered.current = true)} onMouseLeave={() => (hovered.current = false)}>
+    <div className="hot-comments" onMouseEnter={() => (hovered.current = true)} onMouseLeave={() => (hovered.current = false)}>
       <div className="hc-head">
         <span className="hc-title">🔥 {trackName || '热评'}</span>
         <button className="hc-close" onClick={onClose}>

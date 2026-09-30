@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import type { PlayerState } from '../../../preload/index'
-import { LAYOUT } from '../pet/types'
 
 /** 迷你播放器导航键：🎙 ⏮ ▶/⏸ ⏭ + 歌名（有曲目时显示在宠物头顶） */
 export function MiniPlayer({
@@ -24,7 +23,7 @@ export function MiniPlayer({
   const t = state.track
 
   return (
-    <div className="mini-player" style={{ left: LAYOUT.anchorX - 110, top: LAYOUT.anchorY - 148 }}>
+    <div className="mini-player">
       <button
         className={`mp-btn mp-mic${micOn ? ' mp-mic-on' : ''}`}
         title={micOn ? '结束伴唱' : '伴唱（跟唱模式）'}

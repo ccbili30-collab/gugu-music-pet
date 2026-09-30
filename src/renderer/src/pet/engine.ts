@@ -7,7 +7,7 @@ import { Motion } from './motion'
 import { Physics } from './physics'
 import { Particles } from './particles'
 import { IdleScheduler, type IdleAction } from './scheduler'
-import { LAYOUT, type SlotName } from './types'
+import type { SlotName } from './types'
 import { bus, makeBubble } from './bus'
 import { BeatDetector } from './beat'
 
@@ -78,18 +78,21 @@ export class PetEngine {
   private async init(host: HTMLElement): Promise<void> {
     this.app = new Application()
     await this.app.init({
-      width: LAYOUT.windowW,
-      height: LAYOUT.windowH,
+      width: window.innerWidth,
+      height: window.innerHeight,
       backgroundAlpha: 0,
       antialias: false,
       resolution: window.devicePixelRatio,
       autoDensity: true
     })
+    window.addEventListener('resize', () => {
+      this.app.renderer.resize(window.innerWidth, window.innerHeight)
+    })
     host.appendChild(this.app.canvas)
     this.app.stage.eventMode = 'static'
 
     this.motionContainer = new Container()
-    this.motionContainer.position.set(LAYOUT.anchorX, LAYOUT.anchorY)
+    this.motionContainer.position.set(0, 0)
     this.app.stage.addChild(this.motionContainer)
 
     let startPack = 'pigeon'
@@ -231,22 +234,28 @@ export class PetEngine {
     if (this.boundsFetching) return
     this.boundsFetching = true
     try {
-      const sx = window.screenX + LAYOUT.anchorX
-      const sy = window.screenY + LAYOUT.anchorY
-      const si = await window.gugu.screenInfo(clampPos ? sx : this.physics.x, clampPos ? sy : this.physics.y)
+      const si = await window.gugu.screenInfo(this.physics.x, this.physics.y)
+      this.physics.setWorkArea(si.workArea)
+      // 宠物窗贴满当前工作区（全屏活动范围，跨屏时主进程重设窗口）
+      window.gugu.fitWindow(si.workArea)
       if (clampPos) {
-        this.physics.setWorkArea(si.workArea)
         // 出生点：上次的落点（没有则主进程给角落默认值），并夹回工作区
         const spawn = await window.gugu.spawnGet()
         this.physics.x = Math.min(Math.max(spawn.x, this.physics.leftWall), this.physics.rightWall)
         this.physics.y = this.physics.floorY
-      } else {
-        this.physics.setWorkArea(si.workArea)
       }
     } finally {
       this.boundsFetching = false
     }
   }
+
+  /** 宠物脚底点的窗口本地坐标（overlay 跟随层/穿透区域用） */
+  get petLocal(): { x: number; y: number } {
+    return { x: this.physics.x - this.physics.workArea.x, y: this.physics.y - this.physics.workArea.y }
+  }
+
+  /** 每帧宠物移动回调（App 用它驱动跟随层与穿透区域上报） */
+  onPetMoved: ((localX: number, localY: number) => void) | null = null
 
   private async refreshBoundsIfCrossed(): Promise<void> {
     // 高速飞行跨屏时刷新工作区
@@ -289,6 +298,13 @@ export class PetEngine {
     const sprite = this.sprite
 
     sprite.on('pointerdown', (e) => {
+      // 指针捕获：快速拖拽时光标跑出窗口仍持续收到事件
+      try {
+        const ne = e.nativeEvent as PointerEvent
+        ;(ne.target as Element | null)?.setPointerCapture?.(ne.pointerId)
+      } catch {
+        /* 忽略 */
+      }
       const w = this.worldPointer(e.nativeEvent as PointerEvent)
       this.pointerDownAt = performance.now()
       this.pointerDownPos = w
@@ -309,7 +325,7 @@ export class PetEngine {
       if (this.strokeAccum > 90 && now - this.lastStrokeAt > 2000) {
         this.lastStrokeAt = now
         this.strokeAccum = 0
-        this.particles.hearts(LAYOUT.anchorX + 30, LAYOUT.anchorY - 66, 2)
+        this.particles.hearts(this.petLocal.x + 30, this.petLocal.y - 66, 2)
         this.motion.kickSquash(0.18)
         window.gugu.emitEvent('stroke')
       }
@@ -402,7 +418,7 @@ export class PetEngine {
         } else {
           this.lastClickAt = now
           this.motion.kickSquash(0.85)
-          if (!this.sleeping) this.particles.hearts(LAYOUT.anchorX, LAYOUT.anchorY - 60, 2)
+          if (!this.sleeping) this.particles.hearts(this.petLocal.x, this.petLocal.y - 60, 2)
           window.gugu.emitEvent('click')
         }
       }
@@ -542,7 +558,7 @@ export class PetEngine {
     for (const ev of events) {
       if (ev.type === 'land') {
         this.motion.kickSquash(Math.min(ev.impact / 1600, 1) * 0.7)
-        if (ev.impact > 700) this.particles.impactStars(LAYOUT.anchorX, LAYOUT.anchorY - 50)
+        if (ev.impact > 700) this.particles.impactStars(this.petLocal.x, this.petLocal.y - 50)
         window.gugu.emitEvent('land', { impact: Math.round(ev.impact) })
       } else if (ev.type === 'wall') {
         this.motion.kickSquash(0.25)
@@ -558,7 +574,7 @@ export class PetEngine {
     // 睡眠 zzz
     if (this.sleeping && now - this.lastZzz > 2800) {
       this.lastZzz = now
-      this.particles.zzz(LAYOUT.anchorX - 40, LAYOUT.anchorY - 30)
+      this.particles.zzz(this.petLocal.x - 40, this.petLocal.y - 30)
     }
 
     // 定期检查是否跨屏 + 保存落点（下次启动还在老地方）
@@ -615,17 +631,14 @@ export class PetEngine {
     })
     this.motionContainer.scale.set(out.scaleX, out.scaleY)
     this.motionContainer.rotation = out.rotation
-    this.motionContainer.position.set(
-      Math.round(LAYOUT.anchorX),
-      Math.round(LAYOUT.anchorY + out.offsetY)
-    )
+    const lx = Math.round(ph.x - ph.workArea.x)
+    const ly = Math.round(ph.y - ph.workArea.y + out.offsetY)
+    this.motionContainer.position.set(lx, ly)
 
-    // ---- 窗口跟随（宠物脚底点 → 主进程换算窗口位置） ----
-    const rx = Math.round(ph.x)
-    const ry = Math.round(ph.y)
-    if (rx !== this.lastSent.x || ry !== this.lastSent.y) {
-      this.lastSent = { x: rx, y: ry }
-      window.gugu.move(rx, ry)
+    // ---- 通知跟随层（overlay/穿透区域） ----
+    if (lx !== this.lastSent.x || ly !== this.lastSent.y) {
+      this.lastSent = { x: lx, y: ly }
+      this.onPetMoved?.(lx, ly)
     }
   }
 }

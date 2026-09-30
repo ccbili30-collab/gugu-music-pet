@@ -1,11 +1,13 @@
-import { BrowserWindow, shell } from 'electron'
+import { BrowserWindow, shell, screen } from 'electron'
 import { join } from 'node:path'
 
 /**
- * 宠物锚点：宠物"脚底中心"在窗口内的坐标。
- * 渲染进程以屏幕坐标系里的脚底点驱动物理，主进程按此偏移换算窗口位置。
+ * 宠物窗：覆盖整个显示器工作区的透明置顶层（点击穿透由 clickthrough 区域轮询控制），
+ * 宠物可在全屏任意位置活动，不再有 560x420 的隐形矩形边界。
  */
-export const PET_WINDOW = { width: 560, height: 420, anchorX: 250, anchorY: 316 }
+export function petWorkArea(): Electron.Rectangle {
+  return screen.getPrimaryDisplay().workArea
+}
 
 let petWin: BrowserWindow | null = null
 let chatWin: BrowserWindow | null = null
@@ -25,11 +27,12 @@ function loadRenderer(win: BrowserWindow, name: string): void {
 
 export function createPetWindow(): BrowserWindow {
   if (petWin && !petWin.isDestroyed()) return petWin
+  const wa = petWorkArea()
   petWin = new BrowserWindow({
-    width: PET_WINDOW.width,
-    height: PET_WINDOW.height,
-    x: 240,
-    y: 240,
+    width: wa.width,
+    height: wa.height,
+    x: wa.x,
+    y: wa.y,
     transparent: true,
     frame: false,
     resizable: false,
@@ -75,6 +78,16 @@ export function createPetWindow(): BrowserWindow {
 
 export function getPetWindow(): BrowserWindow | null {
   return petWin && !petWin.isDestroyed() ? petWin : null
+}
+
+/** 宠物跨屏/分辨率变化时，把窗口贴到新的工作区 */
+export function fitPetWindow(wa: Electron.Rectangle): void {
+  const win = getPetWindow()
+  if (!win) return
+  const cur = win.getBounds()
+  if (cur.x !== wa.x || cur.y !== wa.y || cur.width !== wa.width || cur.height !== wa.height) {
+    win.setBounds({ x: wa.x, y: wa.y, width: wa.width, height: wa.height })
+  }
 }
 
 export function getChatWindow(): BrowserWindow | null {

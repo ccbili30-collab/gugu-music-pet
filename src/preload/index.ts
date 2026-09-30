@@ -59,7 +59,8 @@ export interface SongsCardMsg {
 }
 
 export interface GuguApi {
-  move(x: number, y: number): void
+  /** 宠物窗贴满指定工作区（跨屏/分辨率变化时调用） */
+  fitWindow(wa: { x: number; y: number; width: number; height: number }): void
   emitEvent(name: string, payload?: unknown): void
   screenInfo(x: number, y: number): Promise<ScreenInfo>
   onScreenChanged(cb: () => void): () => void
@@ -124,7 +125,7 @@ export interface GuguApi {
 }
 
 const api: GuguApi = {
-  move: (x, y) => ipcRenderer.send('pet:move', x, y),
+  fitWindow: (wa) => ipcRenderer.send('pet:fit', wa),
   emitEvent: (name, payload) => ipcRenderer.send('pet:event', name, payload ?? null),
   screenInfo: (x, y) => ipcRenderer.invoke('screen:info', x, y),
   onScreenChanged: (cb) => {

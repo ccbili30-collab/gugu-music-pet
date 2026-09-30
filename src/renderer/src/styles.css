@@ -23,11 +23,21 @@ body {
   inset: 0;
 }
 
+/* ---------- 跟随层（原点 = 宠物脚底，全屏窗模式下 overlay 都挂这里） ---------- */
+.follow-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  will-change: transform;
+}
+
 /* ---------- AI 气泡（右侧） ---------- */
 .bubbles {
   position: absolute;
-  left: 302px; /* 宠物画面右缘(298)旁，水平贴身 */
-  bottom: 134px; /* 容器底 y≈286，单行气泡与宠物身体同高，多行向上伸展 */
+  left: 52px;   /* 相对跟随层原点（宠物脚底）：右侧贴身 */
+  bottom: 30px; /* 气泡底边在脚上方 30px，与身体同高 */
   width: 234px;
   display: flex;
   flex-direction: column;
@@ -133,7 +143,9 @@ body {
 /* ---------- 左侧热评卡 ---------- */
 .hot-comments {
   position: absolute;
-  width: 184px;
+  left: -262px;
+  bottom: -12px;
+  width: 222px;
   background: rgba(38, 38, 44, 0.92);
   border-radius: 14px;
   padding: 8px;
@@ -354,6 +366,8 @@ body {
 /* ---------- 迷你播放器（宠物头顶导航键） ---------- */
 .mini-player {
   position: absolute;
+  left: -110px;
+  top: -148px;
   display: flex;
   align-items: center;
   gap: 3px;

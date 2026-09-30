@@ -21,6 +21,22 @@ export function proxyStreamUrl(remoteUrl: string): string {
   return `${MUSIC_SCHEME}://stream/${encodeURIComponent(remoteUrl)}`
 }
 
+// 允许代理的音频源后缀白名单：渲染层被穿也不能变成任意 GET 代理
+const ALLOWED_HOST_SUFFIXES = [
+  'qishui.com',
+  'douyinvod.com',
+  'douyinpic.com',
+  'zjcdn.com',
+  'music.163.com',
+  'localhost',
+  '127.0.0.1'
+]
+
+function hostAllowed(host: string): boolean {
+  const h = host.toLowerCase()
+  return ALLOWED_HOST_SUFFIXES.some((s) => h === s || h.endsWith('.' + s))
+}
+
 export function handleMusicProtocol(): void {
   protocol.handle(MUSIC_SCHEME, async (request) => {
     const url = new URL(request.url)
@@ -30,6 +46,16 @@ export function handleMusicProtocol(): void {
     const target = decodeURIComponent(url.pathname.replace(/^\/+/, ''))
     if (!/^https?:\/\//.test(target)) {
       return new Response('bad url', { status: 400 })
+    }
+    let targetHost = ''
+    try {
+      targetHost = new URL(target).hostname
+    } catch {
+      return new Response('bad url', { status: 400 })
+    }
+    if (!hostAllowed(targetHost)) {
+      console.warn('[music-proxy] blocked non-whitelisted host:', targetHost)
+      return new Response('host not allowed', { status: 403 })
     }
     const headers: Record<string, string> = {
       'User-Agent': UA

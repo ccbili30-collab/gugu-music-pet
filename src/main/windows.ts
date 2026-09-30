@@ -44,7 +44,7 @@ export function createPetWindow(): BrowserWindow {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false
+      sandbox: true
     }
   })
   petWin.setAlwaysOnTop(true, 'screen-saver')
@@ -77,6 +77,10 @@ export function getPetWindow(): BrowserWindow | null {
   return petWin && !petWin.isDestroyed() ? petWin : null
 }
 
+export function getChatWindow(): BrowserWindow | null {
+  return chatWin && !chatWin.isDestroyed() ? chatWin : null
+}
+
 export function createChatWindow(): BrowserWindow {
   if (chatWin && !chatWin.isDestroyed()) {
     chatWin.show()
@@ -97,7 +101,7 @@ export function createChatWindow(): BrowserWindow {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false
+      sandbox: true
     }
   })
   loadRenderer(chatWin, 'chat')
@@ -137,7 +141,7 @@ export function createLoginWindow(): BrowserWindow {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false
+      sandbox: true
     }
   })
   loadRenderer(loginWin, 'login')
@@ -174,7 +178,7 @@ export function createSettingsPanel(): BrowserWindow {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false
+      sandbox: true
     }
   })
   settingsPanel.setAlwaysOnTop(true, 'pop-up-menu')

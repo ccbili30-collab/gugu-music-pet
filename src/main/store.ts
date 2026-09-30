@@ -1,5 +1,5 @@
 // 简单 JSON 持久化（userData）：LLM 配置 / 聊天历史 / 大脑状态
-import { app } from 'electron'
+import { app, safeStorage } from 'electron'
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -43,8 +43,19 @@ function userDataFile(name: string): string {
 
 export function loadConfig(): AppConfig {
   try {
-    const raw = JSON.parse(readFileSync(userDataFile('config.json'), 'utf8'))
-    return { ...DEFAULT_CONFIG, ...raw, llm: { ...DEFAULT_CONFIG.llm, ...raw.llm } }
+    const raw = JSON.parse(readFileSync(userDataFile('config.json'), 'utf8')) as {
+      llmKeyEnc?: string
+    } & Partial<AppConfig>
+    const cfg: AppConfig = { ...DEFAULT_CONFIG, ...raw, llm: { ...DEFAULT_CONFIG.llm, ...raw.llm } }
+    // apiKey 加密存储优先；兼容旧明文
+    if (raw.llmKeyEnc) {
+      try {
+        cfg.llm.apiKey = safeStorage.decryptString(Buffer.from(raw.llmKeyEnc, 'base64'))
+      } catch {
+        cfg.llm.apiKey = ''
+      }
+    }
+    return cfg
   } catch {
     return { ...DEFAULT_CONFIG }
   }
@@ -52,7 +63,16 @@ export function loadConfig(): AppConfig {
 
 export function saveConfig(cfg: AppConfig): void {
   mkdirSync(app.getPath('userData'), { recursive: true })
-  writeFileSync(userDataFile('config.json'), JSON.stringify(cfg, null, 2))
+  let llmKeyEnc: string | undefined
+  let apiKeyPlain = cfg.llm.apiKey
+  if (apiKeyPlain && safeStorage.isEncryptionAvailable()) {
+    llmKeyEnc = safeStorage.encryptString(apiKeyPlain).toString('base64')
+    apiKeyPlain = ''
+  }
+  writeFileSync(
+    userDataFile('config.json'),
+    JSON.stringify({ ...cfg, llm: { ...cfg.llm, apiKey: apiKeyPlain }, llmKeyEnc }, null, 2)
+  )
 }
 
 export function loadHistory(): ChatMsg[] {

@@ -58,6 +58,8 @@ export class PetEngine {
   private lastPointer = { x: 0, y: 0 }
   private lastSent = { x: -9999, y: -9999 }
   private offCommand: (() => void) | null = null
+  private scaleFactor = Number(localStorage.getItem('gugu-scale') || '1') || 1
+  private hoverRequested = false
   private offScreenChanged: (() => void) | null = null
   private lastSaved = { x: -9999, y: -9999 }
   private lastZzz = 0
@@ -373,10 +375,17 @@ export class PetEngine {
           const dt = (last.t - first.t) / 1000
           const vx = (last.x - first.x) / dt
           const vy = (last.y - first.y) / dt
-          this.physics.startFling(vx, vy)
+          if (this.hoverRequested) {
+            // 悬浮模式：投掷变成阻尼滑行，不会坠地
+            this.physics.mode = 'hover'
+            this.physics.vx = vx * 0.5
+            this.physics.vy = vy * 0.5
+          } else {
+            this.physics.startFling(vx, vy)
+          }
           window.gugu.emitEvent('fling', { vx: Math.round(vx), vy: Math.round(vy) })
         } else {
-          this.physics.mode = 'ballistic'
+          this.physics.mode = this.hoverRequested ? 'hover' : 'ballistic'
           this.physics.vy = 0
           this.physics.vx = 0
         }
@@ -401,6 +410,31 @@ export class PetEngine {
   }
 
   // ---- 公共指令（右键菜单 / 大脑 M4） ----
+
+  /** 缩放桌宠（0.5~2.0），localStorage 持久化 */
+  changeScale(mult: number): void {
+    this.scaleFactor = Math.min(2, Math.max(0.5, Number((this.scaleFactor * mult).toFixed(2))))
+    localStorage.setItem('gugu-scale', String(this.scaleFactor))
+    this.motion.kickSquash(0.4)
+  }
+
+  get isHovering(): boolean {
+    return this.physics.hovering
+  }
+
+  /** 悬浮开/关：开=飞到空中悬停（可拖到任意位置），关=恢复重力落地 */
+  toggleHover(): void {
+    if (this.physics.hovering) {
+      this.hoverRequested = false
+      this.physics.stopHover()
+      this.motion.kickSquash(0.3)
+      return
+    }
+    this.hoverRequested = true
+    this.walking = null
+    this.minorAction = null
+    this.physics.startFlyTo(this.physics.x, Math.max(this.physics.ceiling + 120, this.physics.y - 220))
+  }
 
   walkTo(targetX?: number): void {
     const ph = this.physics
@@ -502,6 +536,8 @@ export class PetEngine {
       }
     }
 
+    // 悬浮请求：flyto 抵达（或直接起飞后）进入 hover 悬停
+    if (this.hoverRequested && ph.mode === 'ballistic' && !this.dragging) ph.startHover()
     const events = ph.update(dt)
     for (const ev of events) {
       if (ev.type === 'land') {
@@ -529,8 +565,8 @@ export class PetEngine {
     this.boundsTimer += dt
     if (this.boundsTimer > 4) {
       this.boundsTimer = 0
-      if (ph.airborne && Math.hypot(ph.vx, ph.vy) > 500) void this.refreshBoundsIfCrossed()
-      if (!ph.airborne) {
+      if (ph.airborne && ph.mode !== 'hover' && Math.hypot(ph.vx, ph.vy) > 500) void this.refreshBoundsIfCrossed()
+      if (!ph.airborne || ph.mode === 'hover') {
         const rx2 = Math.round(ph.x)
         const ry2 = Math.round(ph.y)
         if (Math.abs(rx2 - this.lastSaved.x) > 40 || Math.abs(ry2 - this.lastSaved.y) > 40) {
@@ -562,8 +598,8 @@ export class PetEngine {
     const [, fh] = this.loaded.frameSize
     if (info) this.sprite.anchor.set(0.5, (info.groundRow + 1) / fh)
     this.sprite.scale.set(
-      (this.animator.isFlipped ? -1 : 1) * this.loaded.scale,
-      this.loaded.scale
+      (this.animator.isFlipped ? -1 : 1) * this.loaded.scale * this.scaleFactor,
+      this.loaded.scale * this.scaleFactor
     )
 
     // ---- 变换律动层 ----
@@ -579,7 +615,10 @@ export class PetEngine {
     })
     this.motionContainer.scale.set(out.scaleX, out.scaleY)
     this.motionContainer.rotation = out.rotation
-    this.motionContainer.position.set(LAYOUT.anchorX, LAYOUT.anchorY + out.offsetY)
+    this.motionContainer.position.set(
+      Math.round(LAYOUT.anchorX),
+      Math.round(LAYOUT.anchorY + out.offsetY)
+    )
 
     // ---- 窗口跟随（宠物脚底点 → 主进程换算窗口位置） ----
     const rx = Math.round(ph.x)

@@ -58,6 +58,24 @@ export class Physics {
     return this.mode === 'ballistic' || this.mode === 'flyto' || this.mode === 'drag'
   }
 
+  /** 悬浮：无重力，可停在屏幕任意位置（全局可飞） */
+  get hovering(): boolean {
+    return this.mode === 'hover'
+  }
+
+  startHover(): void {
+    this.mode = 'hover'
+    this.vx = 0
+    this.vy = 0
+  }
+
+  stopHover(): void {
+    if (this.mode === 'hover') {
+      this.mode = 'ballistic'
+      this.vy = Math.max(this.vy, 0)
+    }
+  }
+
   setWorkArea(wa: Rect): void {
     this.workArea = wa
     // 显示器变化时把宠物夹回边界内
@@ -90,6 +108,16 @@ export class Physics {
 
   update(dt: number): PhysEvent[] {
     const events: PhysEvent[] = []
+    if (this.mode === 'hover') {
+      // 阻尼滑行（投掷后缓缓停住），边界内自由悬停
+      this.vx *= Math.exp(-3 * dt)
+      this.vy *= Math.exp(-3 * dt)
+      this.x += this.vx * dt
+      this.y += this.vy * dt
+      this.x = Math.min(Math.max(this.x, this.leftWall), this.rightWall)
+      this.y = Math.min(Math.max(this.y, this.ceiling + 30), this.floorY)
+      return events
+    }
     if (this.mode === 'flyto' && this.fly) {
       const f = this.fly
       const prev = { x: this.x, y: this.y }

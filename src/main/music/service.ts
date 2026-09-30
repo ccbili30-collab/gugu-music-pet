@@ -2,6 +2,7 @@
 import { app, ipcMain, BrowserWindow } from 'electron'
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
+import { safeStorage } from 'electron'
 import { SodaProvider, type Track, type Comment, type LyricLine, type LoginState } from './provider'
 import { proxyStreamUrl } from './proxy'
 
@@ -52,11 +53,20 @@ export class MusicService {
     try {
       const saved = JSON.parse(readFileSync(stateFile(), 'utf8')) as {
         cookie?: string
+        cookieEnc?: string
         login?: LoginState
         queue?: Track[]
         volume?: number
       }
-      if (saved.cookie) {
+      // 优先读加密 cookie（safeStorage），兼容旧明文
+      if (saved.cookieEnc) {
+        try {
+          this.cookie = safeStorage.decryptString(Buffer.from(saved.cookieEnc, 'base64'))
+        } catch {
+          this.cookie = ''
+        }
+        this.login = { loggedIn: !!this.cookie, nickname: this.cookie ? '汽水听众' : undefined }
+      } else if (saved.cookie) {
         this.cookie = saved.cookie
         this.login = await this.provider.loginState(this.cookie)
         // sidecar 重启后 cookie.json 丢失，恢复写回
@@ -74,9 +84,20 @@ export class MusicService {
   private persist(): void {
     try {
       mkdirSync(app.getPath('userData'), { recursive: true })
+      // cookie 加密落盘（safeStorage 不可用则退回明文，功能优先）
+      const enc =
+        this.cookie && safeStorage.isEncryptionAvailable()
+          ? safeStorage.encryptString(this.cookie).toString('base64')
+          : undefined
       writeFileSync(
         stateFile(),
-        JSON.stringify({ cookie: this.cookie, login: this.login, queue: this.queue, volume: this.player.volume })
+        JSON.stringify({
+          cookie: enc ? undefined : this.cookie,
+          cookieEnc: enc,
+          login: this.login,
+          queue: this.queue,
+          volume: this.player.volume
+        })
       )
     } catch (e) {
       console.error('[music] persist failed', e)
@@ -122,8 +143,11 @@ export class MusicService {
   }
 
   report(state: Partial<PlayerState>): void {
+    const prevVolume = this.player.volume
     const prevTrackId = this.player.track?.id
     this.player = { ...this.player, ...state }
+    // 音量变化即落盘（设置面板/托盘都走这条路径）
+    if (typeof state.volume === 'number' && state.volume !== prevVolume) this.persist()
     if (this.player.track) {
       this.player.queueCount = this.queue.length
     }

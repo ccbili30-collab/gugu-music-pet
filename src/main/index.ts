@@ -27,6 +27,13 @@ if (!gotLock) {
       .catch((e) => {
         console.error('[soda-sidecar] failed to start, music disabled:', e)
         void musicService.init()
+        // 音乐不可用要在界面上说清楚，不能只留 console
+        const win = getPetWindow()
+        if (win) {
+          win.webContents.once('did-finish-load', () => {
+            win.webContents.send('pet:bubble', { kind: 'say', text: '音乐组件没启动起来，歌曲功能暂时不可用…' })
+          })
+        }
       })
     registerMusicIpc()
 

@@ -1,7 +1,7 @@
 // 汽水音乐 sidecar：go-music-api 子进程（本地 HTTP，源码 github.com/guohuiyuan/go-music-api）
 // dev 从 <项目>/sidecar/，打包后从 process.resourcesPath/sidecar/ 启动
 import { app } from 'electron'
-import { spawn, type ChildProcess } from 'node:child_process'
+import { execFile, spawn, type ChildProcess } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -27,17 +27,31 @@ async function isUp(): Promise<boolean> {
   }
 }
 
-/** 启动 sidecar 并等待就绪（已在跑则直接复用，方便 dev 反复重启 app） */
-export async function startSidecar(): Promise<void> {
-  if (await isUp()) {
-    console.log('[soda-sidecar] already running, reuse')
-    return
+/** 清理历史遗留的同路径 sidecar（app 崩溃时没机会 stopSidecar 会留下孤儿） */
+function killStaleSidecar(bin: string): void {
+  try {
+    execFile('pkill', ['-f', bin], (err) => {
+      if (!err) console.log('[soda-sidecar] killed stale instance')
+    })
+  } catch {
+    /* pkill 不存在等场景忽略 */
   }
+}
+
+/** 启动 sidecar 并等待就绪；同路径遗留进程先清掉，保证进程始终被本 app 托管 */
+export async function startSidecar(): Promise<void> {
   const bin = binaryPath()
   if (!existsSync(bin)) {
     throw new Error(`sidecar binary missing: ${bin}（先跑 scripts/build-sidecar.sh）`)
   }
-  proc = spawn(bin, [], {
+  killStaleSidecar(bin)
+  // 等 pkill 生效、端口释放
+  await new Promise((r) => setTimeout(r, 600))
+  const bin2 = binaryPath()
+  if (!existsSync(bin)) {
+    throw new Error(`sidecar binary missing: ${bin}（先跑 scripts/build-sidecar.sh）`)
+  }
+  proc = spawn(bin2, [], {
     env: { ...process.env, PORT: String(SIDECAR_PORT) },
     stdio: 'ignore',
     detached: false

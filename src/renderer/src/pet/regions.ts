@@ -19,8 +19,6 @@ export function computeRegions({ bubbleCount, menu, hasTrack, hotOpen }: RegionI
   const rects: UiRect[] = []
   // 宠物本体（精灵 96px + 少量余量）
   rects.push({ x: LAYOUT.anchorX - 60, y: LAYOUT.anchorY - 104, w: 120, h: 110 })
-  // 话筒圆球（右下角脚边，36px）
-  rects.push({ x: LAYOUT.anchorX + 52, y: LAYOUT.anchorY - 32, w: 40, h: 40 })
   if (hasTrack) {
     // 迷你播放器（宠物头顶）
     rects.push({ x: LAYOUT.anchorX - 112, y: LAYOUT.anchorY - 150, w: 244, h: 46 })

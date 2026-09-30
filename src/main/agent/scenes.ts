@@ -145,12 +145,13 @@ class SceneEngine {
       const player = musicService.api.currentState()
       if (!player.track) {
         this.lastEmoDay = today
-        void this.enterEmo(lateNight ? '深夜' : '雨夜')
+        // 深夜只进角落哼歌（不自动开声放歌，避免惊扰休息的用户）；雨夜才播 EMO 歌单
+        void this.enterEmo(lateNight ? '深夜' : '雨夜', !lateNight)
       }
     }
   }
 
-  private async enterEmo(reason: string): Promise<void> {
+  private async enterEmo(reason: string, autoplay = true): Promise<void> {
     this.mode = 'emo'
     this.emoStartedAt = Date.now()
     this.resonancePool = []
@@ -169,8 +170,9 @@ class SceneEngine {
         /* 换下一个关键词 */
       }
     }
-    if (!queue.length) {
-      this.bubble('resonance', '（耳机没电了…）')
+    if (!queue.length || !autoplay) {
+      if (!autoplay) this.bubble('resonance', '（深夜模式：只哼歌，不开声…）')
+      else this.bubble('resonance', '（耳机没电了…）')
       this.mode = 'normal'
       sendToPet('scene:state', { mode: 'normal' })
       return

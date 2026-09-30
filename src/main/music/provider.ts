@@ -167,20 +167,21 @@ export class SodaProvider {
     return { url: streamUrl, trial: false }
   }
 
-  /** 汽水搜索结果自带元数据；按 id 回查用分享链接解析 */
+  /** 汽水搜索结果自带元数据；按 id 回查用分享链接解析（并行，失败忽略） */
   async songDetail(ids: string[]): Promise<Track[]> {
-    const out: Track[] = []
-    for (const id of ids) {
-      try {
+    const results = await Promise.allSettled(
+      ids.map(async (id) => {
         const res = await sidecarFetch(
           `/api/v1/music/search?q=${encodeURIComponent(`https://www.qishui.com/track/${id}`)}`
         )
         const body = (await res.json()) as { data?: { songs?: SodaSong[] } }
         const s = body.data?.songs?.[0]
-        if (s) out.push(toTrack(s))
-      } catch {
-        /* 单个失败忽略 */
-      }
+        return s ? toTrack(s) : null
+      })
+    )
+    const out: Track[] = []
+    for (const r of results) {
+      if (r.status === 'fulfilled' && r.value) out.push(r.value)
     }
     return out
   }

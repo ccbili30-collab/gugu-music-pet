@@ -1,6 +1,6 @@
 // 大脑：会话编排（tool-calling 循环）+ 记忆 + 驱动力 + 安静自主性 + 反射层
-import { BrowserWindow } from 'electron'
 import { chatCompletion, llmReady, type LlmMessage } from './llm'
+import { getPetWindow, getChatWindow } from '../windows'
 import { systemPrompt, memoryExtractPrompt, autonomyPrompt, singPoolPrompt, singSummaryPrompt } from './prompt'
 import { toolDefinitions, dispatchTool, type ToolContext } from './tools'
 import { formatContext, readIndex, storeMemory } from './memory'
@@ -18,15 +18,11 @@ export interface PetBubbleMsg {
 }
 
 function sendToChat(channel: string, payload: unknown): void {
-  for (const win of BrowserWindow.getAllWindows()) {
-    if (win.getTitle().includes('聊天')) win.webContents.send(channel, payload)
-  }
+  getChatWindow()?.webContents.send(channel, payload)
 }
 
 function sendToPet(channel: string, payload: unknown): void {
-  for (const win of BrowserWindow.getAllWindows()) {
-    if (win.getTitle() === 'Gugu Pet') win.webContents.send(channel, payload)
-  }
+  getPetWindow()?.webContents.send(channel, payload)
 }
 
 export class Brain {
@@ -153,7 +149,10 @@ export class Brain {
         const res = await chatCompletion(cfg.llm, [{ role: 'system', content: sys }, ...this.ctx], tools)
         if (!res.ok) {
           sendToChat('chat:reply', { ok: false, content: `大脑转不动了：${res.error}`, kaomoji: '(⊙_⊙)' })
-          this.ctx.pop()
+          // 回滚本轮未完成的残片（孤立的 tool 消息会让严格校验配对的接口持续 400），
+          // 保留到最后一条 user 为止，用户重发即可
+          const lastUser = this.ctx.map((m) => m.role).lastIndexOf('user')
+          if (lastUser >= 0) this.ctx = this.ctx.slice(0, lastUser + 1)
           return
         }
         if (res.toolCalls.length) {
@@ -183,7 +182,17 @@ export class Brain {
         this.history.push({ role: 'user', content: userText, ts: Date.now() })
         this.history.push({ role: 'assistant', content: clean, ts: Date.now() })
         saveHistory(this.history)
-        if (this.ctx.length > 40) this.ctx = this.ctx.slice(-30)
+        if (this.ctx.length > 40) {
+          // 从最近一条 user 消息开头截断——保证不产生"有 tool 结果却没有对应 assistant.tool_calls"的孤儿序列
+          let cut = -30
+          for (let i = this.ctx.length - 30; i < this.ctx.length; i++) {
+            if (this.ctx[i]?.role === 'user') {
+              cut = i
+              break
+            }
+          }
+          this.ctx = this.ctx.slice(cut)
+        }
         sendToChat('chat:reply', { ok: true, content: clean, kaomoji })
         // 气泡（右侧）：回复太长就截第一句
         const short = clean.split(/[。！？!?\n]/)[0]?.slice(0, 26) || clean.slice(0, 26)

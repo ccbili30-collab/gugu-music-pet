@@ -6,6 +6,14 @@ interface PackInfo {
   version: string
 }
 
+const PRESETS = [
+  { name: 'DeepSeek', baseUrl: 'https://api.deepseek.com', model: 'deepseek-chat' },
+  { name: '智谱 GLM', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4.7' },
+  { name: '通义 Qwen', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-plus' },
+  { name: 'Kimi', baseUrl: 'https://api.moonshot.cn/v1', model: 'moonshot-v1-8k' },
+  { name: '本地 Ollama', baseUrl: 'http://127.0.0.1:11434/v1', model: 'qwen2.5:7b' }
+]
+
 interface PlayerLite {
   track: { name: string; artists: string } | null
   playing: boolean
@@ -112,6 +120,17 @@ export function SettingsApp(): JSX.Element {
         <span className={`panel-badge ${llmConfigured ? 'panel-badge-ok' : 'panel-badge-warn'}`}>
           {llmConfigured ? '已配置' : '未配置'}
         </span>
+      </div>
+      <div className="panel-chips">
+        {PRESETS.map((p) => (
+          <button
+            key={p.name}
+            className={`panel-chip${cfg.baseUrl === p.baseUrl ? ' panel-chip-active' : ''}`}
+            onClick={() => setCfg({ ...cfg, baseUrl: p.baseUrl, model: p.model })}
+          >
+            {p.name}
+          </button>
+        ))}
       </div>
       <input
         className="panel-input"

@@ -4,7 +4,7 @@
 
 ![demo](docs/demo.gif)
 
-Electron + TypeScript + PixiJS · LLM 工具调用 · 网易云音乐全链路 · 实时节拍检测
+Electron + TypeScript + PixiJS · LLM 工具调用 · 汽水音乐全链路 · 实时节拍检测
 
 ---
 
@@ -58,7 +58,7 @@ Electron + TypeScript + PixiJS · LLM 工具调用 · 网易云音乐全链路 �
 
 ```
 主进程 (src/main)          Electron 主进程：窗口/托盘/IPC 编排
-  music/                   NetEase API + music:// 流代理 + 播放服务
+  music/                   汽水 Provider（go-music-api sidecar）+ music:// 流代理 + 播放服务
   agent/                   brain（tool-calling 循环 ≤4 轮）/ prompt（T 人格）
                            scenes（EMO 场景引擎）/ memory（Markdown 记忆）/ drives（四维驱动力）
   settings.ts weather.ts   设置面板 IPC / Open-Meteo 免 key 天气
@@ -95,7 +95,7 @@ npx electron-vite dev -- --remote-debugging-port=9222
 node scripts/testing/mock-llm.mjs        # 本地 mock LLM（无需真实 key）
 node scripts/testing/agent-e2e.mjs       # LLM 点歌全链路
 node scripts/testing/settings-e2e.mjs    # 设置面板
-node scripts/testing/music-e2e.mjs       # 网易云搜索/取链/热评
+node scripts/testing/music-e2e.mjs       # 搜索/取链/热评（音乐链路）
 node scripts/testing/capture-demo.mjs    # 演示素材采集（GIF 帧 + 截图）
 ```
 

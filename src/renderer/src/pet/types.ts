@@ -54,4 +54,4 @@ export const LAYOUT = {
   petH: 96
 }
 
-export type PhysMode = 'ground' | 'drag' | 'ballistic' | 'flyto'
+export type PhysMode = 'ground' | 'drag' | 'ballistic' | 'flyto' | 'hover'

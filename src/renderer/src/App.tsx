@@ -5,7 +5,6 @@ import { MicEngine } from './pet/mic'
 import { bus, makeBubble, type BubbleData } from './pet/bus'
 import { computeRegions, reportRegions } from './pet/regions'
 import { Bubbles } from './overlay/Bubbles'
-import { MicOrb } from './overlay/MicOrb'
 import { MiniPlayer } from './overlay/MiniPlayer'
 import { HotComments } from './overlay/HotComments'
 import { ContextMenu, type MenuItem } from './overlay/ContextMenu'
@@ -200,6 +199,11 @@ export default function App(): JSX.Element {
     { label: '演示：雨夜EMO', icon: 'rain', onClick: () => void window.gugu.sceneForceEmo() },
     { label: '走两步', icon: 'walk', onClick: () => engineRef.current?.walkTo() },
     { label: '飞一圈', icon: 'bird', onClick: () => engineRef.current?.flyAround() },
+    engineRef.current?.isHovering
+      ? { label: '落地', icon: 'walk', onClick: () => engineRef.current?.toggleHover() }
+      : { label: '悬浮模式', icon: 'chat', onClick: () => engineRef.current?.toggleHover() },
+    { label: '变大一点', icon: 'sun', onClick: () => engineRef.current?.changeScale(1.15) },
+    { label: '变小一点', icon: 'spark', onClick: () => engineRef.current?.changeScale(1 / 1.15) },
     engineRef.current?.isSleeping
       ? { label: '叫醒它', icon: 'sun', onClick: () => engineRef.current?.wake() }
       : { label: '睡觉', icon: 'zzz', onClick: () => engineRef.current?.sleep() },
@@ -227,8 +231,7 @@ export default function App(): JSX.Element {
           setBubbles((cur) => cur.filter((b) => b.kind !== 'invite'))
         }}
       />
-      <MicOrb recording={micOn} onClick={() => void toggleMic(mic)} />
-      <MiniPlayer engine={audio} />
+      <MiniPlayer engine={audio} micOn={micOn} onMicToggle={() => void toggleMic(mic)} />
       <HotComments open={hotOpen} onClose={() => setHotOpen(false)} />
       {menu && (
         <ContextMenu

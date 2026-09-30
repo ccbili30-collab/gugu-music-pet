@@ -38,16 +38,18 @@ body {
 
 .bubble {
   position: relative;
-  background: rgba(38, 38, 44, 0.92);
-  color: #f5f5f7;
-  border-radius: 11px;
-  padding: 6px 10px;
+  background: rgba(22, 22, 28, 0.55);
+  color: #f2f2f6;
+  border-radius: 12px;
+  padding: 6px 11px;
   font-size: 12px;
   line-height: 1.45;
   max-width: 100%;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
   animation: bubble-in 0.28s cubic-bezier(0.2, 1.4, 0.4, 1);
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
 }
 
 .bubble::before {
@@ -306,13 +308,15 @@ body {
 .ctx-menu {
   position: absolute;
   min-width: 168px;
-  background: rgba(40, 40, 46, 0.96);
+  background: rgba(26, 26, 32, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
   padding: 6px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
   animation: bubble-in 0.14s ease-out;
   z-index: 10;
 }
@@ -352,12 +356,14 @@ body {
   position: absolute;
   display: flex;
   align-items: center;
-  gap: 4px;
-  background: rgba(38, 38, 44, 0.92);
+  gap: 3px;
+  background: rgba(20, 20, 26, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 22px;
-  padding: 5px 10px 5px 6px;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(8px);
+  padding: 4px 10px 4px 5px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
   animation: bubble-in 0.25s ease-out;
   max-width: 240px;
 }
@@ -367,6 +373,13 @@ body {
   background: transparent;
   color: #e8e8ee;
   font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
   width: 28px;
   height: 28px;
   border-radius: 50%;
@@ -388,6 +401,21 @@ body {
 
 .mp-main:hover {
   background: #7d6ff0;
+}
+
+.mp-mic img {
+  width: 13px;
+  height: 13px;
+  image-rendering: pixelated;
+  opacity: 0.75;
+}
+
+.mp-mic-on {
+  background: rgba(124, 108, 240, 0.35) !important;
+}
+
+.mp-mic-on img {
+  opacity: 1;
 }
 
 .mp-title {
@@ -979,6 +1007,12 @@ body {
   font-size: 13px;
   font-weight: 600;
   flex-shrink: 0;
+}
+
+.panel-chips {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
 }
 
 .panel-badge {

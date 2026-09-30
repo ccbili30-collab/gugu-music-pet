@@ -2,8 +2,16 @@ import { useEffect, useState } from 'react'
 import type { PlayerState } from '../../../preload/index'
 import { LAYOUT } from '../pet/types'
 
-/** 迷你播放器导航键：⏮ ▶/⏸ ⏭ + 歌名（有曲目时显示在宠物头顶） */
-export function MiniPlayer({ engine }: { engine: { toggle(): void; next(): void; prev(): void } | null }): JSX.Element {
+/** 迷你播放器导航键：🎙 ⏮ ▶/⏸ ⏭ + 歌名（有曲目时显示在宠物头顶） */
+export function MiniPlayer({
+  engine,
+  micOn,
+  onMicToggle
+}: {
+  engine: { toggle(): void; next(): void; prev(): void } | null
+  micOn: boolean
+  onMicToggle(): void
+}): JSX.Element {
   const [state, setState] = useState<PlayerState | null>(null)
 
   useEffect(() => {
@@ -17,6 +25,13 @@ export function MiniPlayer({ engine }: { engine: { toggle(): void; next(): void;
 
   return (
     <div className="mini-player" style={{ left: LAYOUT.anchorX - 110, top: LAYOUT.anchorY - 148 }}>
+      <button
+        className={`mp-btn mp-mic${micOn ? ' mp-mic-on' : ''}`}
+        title={micOn ? '结束伴唱' : '伴唱（跟唱模式）'}
+        onClick={onMicToggle}
+      >
+        <img src="icons/mic.png" alt="" draggable={false} />
+      </button>
       <button className="mp-btn" title="上一首" onClick={() => engine?.prev()}>
         ⏮
       </button>

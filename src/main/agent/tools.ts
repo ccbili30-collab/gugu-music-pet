@@ -43,7 +43,7 @@ export function toolDefinitions(): ToolDef[] {
         parameters: {
           type: 'object',
           properties: {
-            ids: { type: 'array', items: { type: 'number' }, description: '歌曲 id 列表' },
+            ids: { type: 'array', items: { type: 'string' }, description: '歌曲 id 列表（19 位大数字符串，勿转数字）' },
             name: { type: 'string', description: '想放的歌名（用于兜底搜索）' }
           }
         }
@@ -87,7 +87,7 @@ export function toolDefinitions(): ToolDef[] {
         description: '拿当前歌曲（或指定 id）的热门评论，用于聊歌、共鸣（汽水源可能返回空）',
         parameters: {
           type: 'object',
-          properties: { id: { type: 'number', description: '歌曲 id，缺省用当前播放的歌' }, limit: { type: 'number' } }
+          properties: { id: { type: 'string', description: '歌曲 id 字符串，缺省用当前播放的歌' }, limit: { type: 'number' } }
         }
       }
     },

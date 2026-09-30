@@ -18,7 +18,7 @@ let started = false
 export function startClickThrough(): void {
   if (started) return
   started = true
-  setInterval(tick, 40)
+  setInterval(tick, 20)
 }
 
 export function setRegions(next: UiRect[]): void {

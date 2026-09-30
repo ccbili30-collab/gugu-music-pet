@@ -331,16 +331,21 @@ export class PetEngine {
       }
     })
 
-    sprite.on('contextmenu', (e) => {
-      e.preventDefault()
-      const client = e.client
-      bus.emit('menu', { x: client.x, y: client.y })
-    })
-
     if (this.windowListenersBound) return
     this.windowListenersBound = true
     window.addEventListener('pointermove', this.onWindowPointerMove)
     window.addEventListener('pointerup', this.onWindowPointerUp)
+    // Pixi v8 不把 DOM contextmenu 路由给 sprite：canvas 原生监听 + 自行命中测试
+    this.app.canvas.addEventListener('contextmenu', this.onContextMenu)
+  }
+
+  private onContextMenu = (e: MouseEvent): void => {
+    if (this.dragging) return
+    const b = this.sprite.getBounds()
+    const hit = e.clientX >= b.x && e.clientX <= b.x + b.width && e.clientY >= b.y && e.clientY <= b.y + b.height
+    if (!hit) return
+    e.preventDefault()
+    bus.emit('menu', { x: e.clientX, y: e.clientY })
   }
 
   private onWindowPointerMove = (e: PointerEvent): void => {
@@ -490,6 +495,7 @@ export class PetEngine {
     cancelAnimationFrame(this.raf)
     window.removeEventListener('pointermove', this.onWindowPointerMove)
     window.removeEventListener('pointerup', this.onWindowPointerUp)
+    this.app.canvas.removeEventListener('contextmenu', this.onContextMenu)
     this.offCommand?.()
     this.offScreenChanged?.()
     this.app.destroy(true, { children: true })

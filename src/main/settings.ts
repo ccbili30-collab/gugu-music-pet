@@ -2,6 +2,7 @@
 import { ipcMain, BrowserWindow } from 'electron'
 import { getCity, setCity } from './weather'
 import { loadConfig, saveConfig } from './store'
+import { refreshTrayMenu } from './tray'
 
 export function registerSettingsIpc(): void {
   ipcMain.handle('settings:get', () => ({
@@ -27,6 +28,7 @@ export function registerSettingsIpc(): void {
   ipcMain.handle('pet:pack:set', (_e, id: string) => {
     const cur = loadConfig()
     saveConfig({ ...cur, packId: String(id).slice(0, 64) })
+    void import('./tray').then(({ refreshTrayMenu }) => refreshTrayMenu())
     return { ok: true }
   })
 
@@ -34,6 +36,7 @@ export function registerSettingsIpc(): void {
   ipcMain.handle('settings:switchPack', (_e, id: string) => {
     const cur = loadConfig()
     saveConfig({ ...cur, packId: String(id).slice(0, 64) })
+    refreshTrayMenu()
     for (const win of BrowserWindow.getAllWindows()) {
       if (win.getTitle() === 'Gugu Pet') {
         win.webContents.send('pet:command', { action: 'pack', id })

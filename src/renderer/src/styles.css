@@ -316,52 +316,6 @@ body {
   }
 }
 
-/* ---------- 右键菜单 ---------- */
-.ctx-menu {
-  position: absolute;
-  min-width: 168px;
-  background: rgba(26, 26, 32, 0.68);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
-  padding: 6px;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(24px) saturate(1.4);
-  -webkit-backdrop-filter: blur(24px) saturate(1.4);
-  animation: bubble-in 0.14s ease-out;
-  z-index: 10;
-}
-
-.ctx-item {
-  border: none;
-  background: transparent;
-  color: #ececf1;
-  text-align: left;
-  font-size: 13px;
-  padding: 6px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.ctx-ico {
-  width: 16px;
-  height: 16px;
-  image-rendering: pixelated;
-  flex-shrink: 0;
-}
-
-.ctx-item:not(:disabled):hover {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.ctx-item:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
 
 /* ---------- 迷你播放器（宠物头顶导航键） ---------- */
 .mini-player {

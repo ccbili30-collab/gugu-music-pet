@@ -160,6 +160,21 @@ export class PetEngine {
         case 'pack':
           void this.switchPack((raw as { id?: string }).id ?? 'pigeon')
           break
+        case 'walk':
+          this.walkTo()
+          break
+        case 'hover':
+          this.toggleHover()
+          break
+        case 'scale-up':
+          this.changeScale(1.15)
+          break
+        case 'scale-down':
+          this.changeScale(1 / 1.15)
+          break
+        case 'hotcomments':
+          bus.emit('hotComments', undefined)
+          break
       }
     })
 

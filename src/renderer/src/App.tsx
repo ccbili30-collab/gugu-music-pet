@@ -7,7 +7,6 @@ import { computeRegions, reportRegions } from './pet/regions'
 import { Bubbles } from './overlay/Bubbles'
 import { MiniPlayer } from './overlay/MiniPlayer'
 import { HotComments } from './overlay/HotComments'
-import { ContextMenu, type MenuItem } from './overlay/ContextMenu'
 
 
 export default function App(): JSX.Element {
@@ -38,9 +37,6 @@ export default function App(): JSX.Element {
     return () => window.clearInterval(t)
   }, [])
   const [bubbles, setBubbles] = useState<BubbleData[]>([])
-  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
-  const [packs, setPacks] = useState<{ id: string; name: string; version: string }[]>([])
-  const [currentPack, setCurrentPack] = useState('pigeon')
   const [hasTrack, setHasTrack] = useState(false)
   const [sceneMode, setSceneMode] = useState<'normal' | 'emo' | 'listening'>('normal')
   const [hotOpen, setHotOpen] = useState(false)
@@ -58,22 +54,23 @@ export default function App(): JSX.Element {
     return off
   }, [])
 
-  // 右键菜单（Pixi v8 不路由 contextmenu 到 sprite：window 级监听 + 引擎命中测试）
+  // 功能菜单已收进 mac 托盘：窗口内右键只做拦截（避免 Chromium 默认菜单）
   useEffect(() => {
-    const onCtx = (e: MouseEvent): void => {
-      const eng = engineRef.current
-      if (!eng || !eng.contextMenuHit(e.clientX, e.clientY)) return
-      e.preventDefault()
-      setMenu({ x: e.clientX, y: e.clientY })
-    }
+    const onCtx = (e: MouseEvent): void => e.preventDefault()
     window.addEventListener('contextmenu', onCtx)
     return () => window.removeEventListener('contextmenu', onCtx)
   }, [])
 
+  // 托盘「看看热评」→ 打开热评卡
+  useEffect(() => {
+    const off = bus.on('hotComments', () => setHotOpen(true))
+    return off
+  }, [])
+
   // ---- 全屏窗模式：跟随层 + 穿透区域随宠物移动 ----
   const followRef = useRef<HTMLDivElement>(null)
-  const uiRef = useRef({ bubbleCount: 0, menu: null as { x: number; y: number; items: number } | null, hasTrack: false, hotOpen: false })
-  uiRef.current = { bubbleCount: bubbles.length, menu: menu ? { x: menu.x, y: menu.y, items: 13 + packs.length } : null, hasTrack, hotOpen }
+  const uiRef = useRef({ bubbleCount: 0, hasTrack: false, hotOpen: false })
+  uiRef.current = { bubbleCount: bubbles.length, hasTrack, hotOpen }
 
   useEffect(() => {
     let lastReport = 0
@@ -175,12 +172,6 @@ export default function App(): JSX.Element {
   }
 
   useEffect(() => {
-    void window.gugu.packsList().then(setPacks)
-    const offPack = bus.on('pack', ({ id }) => setCurrentPack(id))
-    return offPack
-  }, [])
-
-  useEffect(() => {
     let disposed = false
     void PetEngine.create(hostRef.current as HTMLElement).then((engine) => {
       if (disposed) {
@@ -191,12 +182,8 @@ export default function App(): JSX.Element {
       // 调试/自动化钩子挂活实例（CDP 观察/驱动拖拽、节拍等）
       ;(window as unknown as Record<string, unknown>).__guguEngine = engine
     })
-    const offMenu = bus.on('menu', (p) => setMenu(p))
-    const offClose = bus.on('closeMenu', () => setMenu(null))
     return () => {
       disposed = true
-      offMenu()
-      offClose()
       engineRef.current?.destroy()
       engineRef.current = null
     }
@@ -218,45 +205,6 @@ export default function App(): JSX.Element {
     return off
   }, [])
 
-  const playRandom = async (): Promise<void> => {
-    try {
-      const list = await window.gugu.music.recommend()
-      if (!list.length) {
-        bus.emit('bubble', makeBubble({ kind: 'say', text: '推荐列表空空的…等会儿再试', ttl: 4000 }))
-        return
-      }
-      await audio?.playQueue(list, 0)
-    } catch {
-      bus.emit('bubble', makeBubble({ kind: 'say', text: '拿推荐列表失败了，检查下网络？', ttl: 4000 }))
-    }
-  }
-
-  const items: MenuItem[] = [
-    { label: '陪我聊聊', icon: 'chat', onClick: () => window.gugu.openChat() },
-    { label: '随机来一首', icon: 'note', onClick: () => void playRandom() },
-    { label: '看看热评', icon: 'hot', onClick: () => setHotOpen(true) },
-    { label: '演示：雨夜EMO', icon: 'rain', onClick: () => void window.gugu.sceneForceEmo() },
-    { label: '走两步', icon: 'walk', onClick: () => engineRef.current?.walkTo() },
-    { label: '飞一圈', icon: 'bird', onClick: () => engineRef.current?.flyAround() },
-    engineRef.current?.isHovering
-      ? { label: '落地', icon: 'walk', onClick: () => engineRef.current?.toggleHover() }
-      : { label: '悬浮模式', icon: 'chat', onClick: () => engineRef.current?.toggleHover() },
-    { label: '变大一点', icon: 'sun', onClick: () => engineRef.current?.changeScale(1.15) },
-    { label: '变小一点', icon: 'spark', onClick: () => engineRef.current?.changeScale(1 / 1.15) },
-    engineRef.current?.isSleeping
-      ? { label: '叫醒它', icon: 'sun', onClick: () => engineRef.current?.wake() }
-      : { label: '睡觉', icon: 'zzz', onClick: () => engineRef.current?.sleep() },
-    ...(packs.length > 1
-      ? packs.map((p) => ({
-          label: `${p.id === currentPack ? '● ' : '○ '}${p.name}`,
-          icon: 'bird',
-          onClick: () => void engineRef.current?.switchPack(p.id)
-        }))
-      : []),
-    { label: '设置', icon: 'gear', onClick: () => window.gugu.openSettings() },
-    { label: '登录汽水音乐', icon: 'qr', onClick: () => window.gugu.openLogin() },
-    { label: '再见', icon: 'power', onClick: () => window.gugu.quit() }
-  ]
 
   return (
     <div className={`overlay${sceneMode === 'emo' ? ' scene-emo' : ''}`}>
@@ -274,14 +222,6 @@ export default function App(): JSX.Element {
         <MiniPlayer engine={audio} micOn={micOn} onMicToggle={() => void toggleMic(mic)} />
         <HotComments open={hotOpen} onClose={() => setHotOpen(false)} />
       </div>
-      {menu && (
-        <ContextMenu
-          x={menu.x}
-          y={menu.y}
-          items={items}
-          onClose={() => setMenu(null)}
-        />
-      )}
     </div>
   )
 }

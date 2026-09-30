@@ -10,13 +10,12 @@ interface RegionInputs {
   petX: number
   petY: number
   bubbleCount: number
-  menu: { x: number; y: number; items: number } | null
   hasTrack: boolean
   hotOpen?: boolean
 }
 
 /** 计算当前需要接收鼠标的窗口区域（窗口本地坐标；全屏窗模式下随宠物移动） */
-export function computeRegions({ petX, petY, bubbleCount, menu, hasTrack, hotOpen }: RegionInputs): UiRect[] {
+export function computeRegions({ petX, petY, bubbleCount, hasTrack, hotOpen }: RegionInputs): UiRect[] {
   const rects: UiRect[] = []
   // 宠物本体（精灵 96px + 余量）
   rects.push({ x: petX - 60, y: petY - 110, w: 120, h: 116 })
@@ -31,9 +30,6 @@ export function computeRegions({ petX, petY, bubbleCount, menu, hasTrack, hotOpe
   if (hotOpen) {
     // 左侧热评卡
     rects.push({ x: petX - 262, y: petY - 210, w: 222, h: 222 })
-  }
-  if (menu) {
-    rects.push({ x: menu.x - 4, y: menu.y - 4, w: 188, h: menu.items * 34 + 16 })
   }
   return rects
 }

@@ -200,7 +200,10 @@ export class SodaProvider {
   async recommend(): Promise<Track[]> {
     const q = HOT_QUERIES[Math.floor(Math.random() * HOT_QUERIES.length)]
     try {
-      return await this.search(q, 12)
+      const list = await this.search(q, 12)
+      // VIP 曲目流经常取不到：非 VIP 优先，避免「随机来一首」连续跳歌
+      const free = list.filter((t) => !t.vip)
+      return free.length >= 3 ? free : list
     } catch {
       return []
     }

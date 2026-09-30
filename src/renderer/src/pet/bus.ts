@@ -9,11 +9,10 @@ export interface BubbleData {
 
 export type BusEvents = {
   bubble: BubbleData
-  menu: { x: number; y: number }
-  closeMenu: undefined
   openChat: undefined
   pack: { id: string }
   trackChange: { name: string; artists: string; trial: boolean }
+  hotComments: undefined
 }
 
 type Handler<K extends keyof BusEvents> = (payload: BusEvents[K]) => void

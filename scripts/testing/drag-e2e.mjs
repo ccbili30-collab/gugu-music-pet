@@ -47,10 +47,16 @@ const PET0 = JSON.parse(await p.ev(`JSON.stringify(window.__guguEngine.petLocal)
 console.log('pet local:', PET0)
 
 // 1. 精灵命中：bounds 覆盖点击点（rootBoundary.hitTest 是内部 API 不稳定，不用于断言）
-const bounds = JSON.parse(await p.ev(`(() => { const b = window.__guguEngine.sprite.getBounds(); return JSON.stringify([b.x, b.y, b.width, b.height]) })()`))
-const hitByBounds =
-  bounds[0] <= PET0.x && PET0.x <= bounds[0] + bounds[2] && bounds[1] <= PET0.y - 30 && PET0.y - 30 <= bounds[1] + bounds[3]
-check(`精灵 bounds 覆盖点击点(${PET0.x},${PET0.y - 30})`, hitByBounds, JSON.stringify(bounds))
+// bounds 断言非致命（Pixi v8 getBounds 换帧竞态偶发抛错，真实命中由后续 CDP 事件链验证）
+const boundsRaw = await p.ev(`(() => { try { const b = window.__guguEngine.sprite.getBounds(); return JSON.stringify([Math.round(b.x), Math.round(b.y), Math.round(b.width), Math.round(b.height)]) } catch { return null } })()`)
+if (boundsRaw) {
+  const bounds = JSON.parse(boundsRaw)
+  const hitByBounds =
+    bounds[0] <= PET0.x && PET0.x <= bounds[0] + bounds[2] && bounds[1] <= PET0.y - 30 && PET0.y - 30 <= bounds[1] + bounds[3]
+  check(`精灵 bounds 覆盖点击点(${Math.round(PET0.x)},${Math.round(PET0.y - 30)})`, hitByBounds, JSON.stringify(bounds))
+} else {
+  console.log('- bounds 探测跳过（getBounds 竞态），命中由事件链验证')
+}
 
 // 2. CDP 系统事件链（走 Chromium 管线，等价真人点击路径的渲染层部分）
 await p.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: PET0.x, y: PET0.y - 30, button: 'left', clickCount: 1, pointerType: 'mouse' })
@@ -76,13 +82,21 @@ check('松手后 fling 弹道', after.mode === 'ballistic' || after.mode === 'gr
 const before = { x: 0 }
 check('长距拖拽位移 >600px', Math.abs(after.x - PET0.x) > 600, `from ${PET0.x} to ${after.x}`)
 
-// 3. 点击（非拖动）也要正常：摸头爱心
-await p.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: PET0.x, y: PET0.y - 30, button: 'left', clickCount: 1, pointerType: 'mouse' })
+// 3. 点击（非拖动）也要正常：摸头爱心 —— 等落地静止，取当前位置，同点按下/释放
+for (let i = 0; i < 60; i++) {
+  if ((await p.ev(`window.__guguEngine.physics.mode`)) === 'ground') break
+  await sleep(300)
+}
+await sleep(800)
+const PC = JSON.parse(await p.ev(`JSON.stringify(window.__guguEngine.petLocal)`))
+const cx = Math.round(PC.x)
+const cy = Math.round(PC.y - 30)
+await p.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: cx, y: cy, button: 'left', clickCount: 1, pointerType: 'mouse' })
 await sleep(80)
-await p.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: 250, y: 300, button: 'left', clickCount: 1, pointerType: 'mouse' })
+await p.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: cx, y: cy, button: 'left', clickCount: 1, pointerType: 'mouse' })
 await sleep(300)
 const clickFired = await p.ev(`window.__guguEngine.lastClickAt > 0`)
-check('单击事件（摸头/kick）', clickFired === true)
+check(`单击事件（摸头/kick @${cx},${cy}）`, clickFired === true)
 
 // 恢复地面
 await p.ev(`(() => { const ph = window.__guguEngine.physics; ph.startFling(0, 0); 'ok' })()`)

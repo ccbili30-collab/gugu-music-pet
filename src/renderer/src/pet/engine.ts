@@ -335,17 +335,21 @@ export class PetEngine {
     this.windowListenersBound = true
     window.addEventListener('pointermove', this.onWindowPointerMove)
     window.addEventListener('pointerup', this.onWindowPointerUp)
-    // Pixi v8 不把 DOM contextmenu 路由给 sprite：canvas 原生监听 + 自行命中测试
-    this.app.canvas.addEventListener('contextmenu', this.onContextMenu)
   }
 
-  private onContextMenu = (e: MouseEvent): void => {
-    if (this.dragging) return
-    const b = this.sprite.getBounds()
-    const hit = e.clientX >= b.x && e.clientX <= b.x + b.width && e.clientY >= b.y && e.clientY <= b.y + b.height
-    if (!hit) return
-    e.preventDefault()
-    bus.emit('menu', { x: e.clientX, y: e.clientY })
+  /** 右键命中测试（Pixi v8 不路由 contextmenu，App 层 window 监听后调用） */
+  contextMenuHit(x: number, y: number): boolean {
+    if (this.dragging) return false
+    try {
+      const b = this.sprite.getBounds()
+      return x >= b.x && x <= b.x + b.width && y >= b.y && y <= b.y + b.height
+    } catch {
+      // getBounds 在换帧竞态下偶发抛错（Pixi v8）：按宠物位置+缩放估算
+      const p = this.petLocal
+      const w = 96 * this.scaleFactor
+      const h = 96 * this.scaleFactor
+      return x >= p.x - w / 2 && x <= p.x + w / 2 && y >= p.y - h && y <= p.y
+    }
   }
 
   private onWindowPointerMove = (e: PointerEvent): void => {
@@ -495,7 +499,6 @@ export class PetEngine {
     cancelAnimationFrame(this.raf)
     window.removeEventListener('pointermove', this.onWindowPointerMove)
     window.removeEventListener('pointerup', this.onWindowPointerUp)
-    this.app.canvas.removeEventListener('contextmenu', this.onContextMenu)
     this.offCommand?.()
     this.offScreenChanged?.()
     this.app.destroy(true, { children: true })

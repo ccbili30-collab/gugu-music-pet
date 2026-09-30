@@ -58,6 +58,18 @@ export default function App(): JSX.Element {
     return off
   }, [])
 
+  // 右键菜单（Pixi v8 不路由 contextmenu 到 sprite：window 级监听 + 引擎命中测试）
+  useEffect(() => {
+    const onCtx = (e: MouseEvent): void => {
+      const eng = engineRef.current
+      if (!eng || !eng.contextMenuHit(e.clientX, e.clientY)) return
+      e.preventDefault()
+      setMenu({ x: e.clientX, y: e.clientY })
+    }
+    window.addEventListener('contextmenu', onCtx)
+    return () => window.removeEventListener('contextmenu', onCtx)
+  }, [])
+
   // ---- 全屏窗模式：跟随层 + 穿透区域随宠物移动 ----
   const followRef = useRef<HTMLDivElement>(null)
   const uiRef = useRef({ bubbleCount: 0, menu: null as { x: number; y: number; items: number } | null, hasTrack: false, hotOpen: false })

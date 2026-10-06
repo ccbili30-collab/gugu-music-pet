@@ -23,6 +23,117 @@ body {
   inset: 0;
 }
 
+/* ---------- 头顶对话气泡（行内聊天） ---------- */
+.head-chat {
+  position: absolute;
+  left: -116px;
+  bottom: 104px; /* 输入框底边距宠物头顶 */
+  width: 232px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  justify-content: flex-end;
+}
+
+.hc-reply {
+  background: rgba(22, 22, 28, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #f2f2f6;
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
+  animation: bubble-in 0.28s cubic-bezier(0.2, 1.4, 0.4, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hc-kaomoji {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.hc-thinking {
+  flex-direction: row;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+}
+
+.hc-thinking .dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #b9b9c5;
+  animation: hc-blink 1.2s infinite;
+}
+
+.hc-thinking .dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.hc-thinking .dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes hc-blink {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+.hc-input-bar {
+  display: flex;
+  gap: 5px;
+  background: rgba(22, 22, 28, 0.65);
+  border: 1px solid rgba(124, 108, 240, 0.45);
+  border-radius: 13px;
+  padding: 5px 5px 5px 11px;
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  box-shadow: 0 6px 22px rgba(60, 46, 180, 0.25);
+}
+
+.hc-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: #f5f5f7;
+  font-size: 12px;
+  outline: none;
+  min-width: 0;
+}
+
+.hc-input::placeholder {
+  color: rgba(245, 245, 247, 0.4);
+}
+
+.hc-send {
+  border: none;
+  border-radius: 9px;
+  background: #6a5ae0;
+  color: #fff;
+  font-size: 13px;
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.hc-send:disabled {
+  opacity: 0.4;
+}
+
 /* ---------- 聊天入口（脚边常驻，直接交互） ---------- */
 .chat-entry {
   position: absolute;

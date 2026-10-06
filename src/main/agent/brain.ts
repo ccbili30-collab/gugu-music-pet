@@ -18,7 +18,9 @@ export interface PetBubbleMsg {
 }
 
 function sendToChat(channel: string, payload: unknown): void {
+  // 聊天窗 + 宠物窗（头顶对话气泡）都广播；没开的窗口自然收不到
   getChatWindow()?.webContents.send(channel, payload)
+  getPetWindow()?.webContents.send(channel, payload)
 }
 
 function sendToPet(channel: string, payload: unknown): void {

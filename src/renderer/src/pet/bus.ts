@@ -13,6 +13,7 @@ export type BusEvents = {
   pack: { id: string }
   trackChange: { name: string; artists: string; trial: boolean }
   hotComments: undefined
+  headChat: undefined
 }
 
 type Handler<K extends keyof BusEvents> = (payload: BusEvents[K]) => void

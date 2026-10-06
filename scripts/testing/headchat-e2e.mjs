@@ -35,6 +35,7 @@ const poll = async (fn, ms, step = 300) => {
   return await fn()
 }
 
+const IDLE_FADE_POLL = 12000
 const pet = (await list()).find((t) => t.title === 'Gugu Pet')
 const p = connect(pet.webSocketDebuggerUrl)
 await p.ready
@@ -92,6 +93,16 @@ const fadingSeen = await poll(async () => {
 }, 15000, 300)
 check('顺序消散 → hidden', fadingSeen === true)
 check('输入框参与顺序消散', sawBarEvap === true)
+
+// 6.5 不交互也会自己消散（新用例：唤醒后不输入，等消散）
+for (const _ of [1, 2]) {
+  await p.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: cx, y: cy, button: 'left', clickCount: 1, pointerType: 'mouse' })
+  await sleep(60)
+  await p.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: cx, y: cy, button: 'left', clickCount: 1, pointerType: 'mouse' })
+  await sleep(140)
+}
+check('不交互唤醒', (await poll(async () => (await phase()) === 'open', 1500)) === true)
+check('不点不输入→自己从上到下消散', (await poll(async () => (await phase()) === 'none', IDLE_FADE_POLL, 500)) === true)
 
 // 7. 再双击 → 唤醒且不带历史
 for (const _ of [1, 2]) {

@@ -95,6 +95,7 @@ function HeadChat({ onPhaseChange }, ref): JSX.Element {
       setThinking(false)
       thinkingRef.current = false
       engagedRef.current = false
+      lastActivityRef.current = Date.now()
       setPhaseBoth('open')
       localStorage.setItem('gugu-hc-onboarded', '1')
       setOnboarded(true)
@@ -123,9 +124,9 @@ function HeadChat({ onPhaseChange }, ref): JSX.Element {
   // 空闲蒸发巡检
   useEffect(() => {
     const t = window.setInterval(() => {
+      // 不交互（没打字/没新回复）也一样到点消散——从上到下顺序溶解
       if (
         phaseRef.current === 'open' &&
-        engagedRef.current &&
         !thinkingRef.current &&
         Date.now() - lastActivityRef.current > IDLE_FADE_MS
       ) {

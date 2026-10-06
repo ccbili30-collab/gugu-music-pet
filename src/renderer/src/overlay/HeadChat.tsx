@@ -33,11 +33,14 @@ function HeadChat({ onPhaseChange }, ref): JSX.Element {
   const [replies, setReplies] = useState<ReplyItem[]>([])
   const [thinking, setThinking] = useState(false)
   const [input, setInput] = useState('')
+  const [barFading, setBarFading] = useState(false)
   const [onboarded, setOnboarded] = useState(() => !!localStorage.getItem('gugu-hc-onboarded'))
   const inputRef = useRef<HTMLInputElement>(null)
   const nextId = useRef(1)
   const engagedRef = useRef(false)
   const thinkingRef = useRef(false)
+  const repliesRef = useRef<ReplyItem[]>([])
+  repliesRef.current = replies
   const lastActivityRef = useRef(0)
   const hoverRef = useRef(false)
   const timersRef = useRef<number[]>([])
@@ -54,6 +57,33 @@ function HeadChat({ onPhaseChange }, ref): JSX.Element {
   }
   const later = (fn: () => void, ms: number): void => {
     timersRef.current.push(window.setTimeout(fn, ms))
+  }
+
+  /** 顺序消散：回复旧→新逐条溶解，输入框最后消散，然后回 hidden */
+  const cascadeClose = (fast: boolean): void => {
+    clearTimers()
+    setPhaseBoth('fading')
+    const step = fast ? 70 : CASCADE_MS
+    const n = repliesRef.current.length
+    repliesRef.current.forEach((r, i) => {
+      later(() => {
+        setReplies((c) => c.map((x) => (x.id === r.id ? { ...x, fading: true } : x)))
+      }, i * step)
+    })
+    // 输入框收尾消散
+    later(() => setBarFading(true), n * step + (fast ? 60 : 120))
+    later(
+      () => {
+        if (phaseRef.current === 'fading') {
+          setPhaseBoth('hidden')
+          thinkingRef.current = false
+          setThinking(false)
+          setBarFading(false)
+          setReplies((cur) => cur.slice(-2)) // 留最近两条作下次唤醒的淡显回溯
+        }
+      },
+      n * step + 460
+    )
   }
 
   useImperativeHandle(ref, () => ({
@@ -75,8 +105,10 @@ function HeadChat({ onPhaseChange }, ref): JSX.Element {
           setPhaseBoth('peek')
           armDwell() // 闪烁重入也重新计时
         } else if (phaseRef.current === 'fading') {
-          // 打断蒸发，恢复交流态
+          // 打断消散，恢复交流态
+          clearTimers()
           setReplies((cur) => cur.map((r) => ({ ...r, fading: false })))
+          setBarFading(false)
           setPhaseBoth('open')
           lastActivityRef.current = Date.now()
         }
@@ -88,7 +120,7 @@ function HeadChat({ onPhaseChange }, ref): JSX.Element {
           }, 250)
         } else if (phaseRef.current === 'open' && !engagedRef.current) {
           later(() => {
-            if (!hoverRef.current && phaseRef.current === 'open' && !engagedRef.current) setPhaseBoth('hidden')
+            if (!hoverRef.current && phaseRef.current === 'open' && !engagedRef.current) cascadeClose(true)
           }, DWELL_OUT_MS)
         }
       }
@@ -104,24 +136,7 @@ function HeadChat({ onPhaseChange }, ref): JSX.Element {
         !thinkingRef.current &&
         Date.now() - lastActivityRef.current > IDLE_FADE_MS
       ) {
-        setPhaseBoth('fading')
-        // 旧→新逐条蒸发
-        setReplies((cur) => {
-          cur.forEach((r, i) => {
-            later(() => {
-              setReplies((c) => c.map((x) => (x.id === r.id ? { ...x, fading: true } : x)))
-            }, i * CASCADE_MS)
-          })
-          return cur
-        })
-        later(() => {
-          if (phaseRef.current === 'fading') {
-            setPhaseBoth('hidden')
-            thinkingRef.current = false
-            setThinking(false)
-            setReplies((cur) => cur.slice(-2)) // 留最近两条作下次唤醒的淡显回溯
-          }
-        }, replies.length * CASCADE_MS + 600)
+        cascadeClose(false)
       }
     }, 500)
     return () => window.clearInterval(t)
@@ -135,6 +150,8 @@ function HeadChat({ onPhaseChange }, ref): JSX.Element {
       clearTimers()
       thinkingRef.current = false
       setThinking(false)
+      setBarFading(false)
+      setReplies((cur) => cur.map((r) => ({ ...r, fading: false })))
       engagedRef.current = true
       lastActivityRef.current = Date.now()
       if (phaseRef.current === 'fading' || phaseRef.current === 'hidden') setPhaseBoth('open')
@@ -142,9 +159,8 @@ function HeadChat({ onPhaseChange }, ref): JSX.Element {
     })
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') {
-        clearTimers()
         engagedRef.current = false
-        setPhaseBoth('hidden')
+        cascadeClose(true)
       }
     }
     window.addEventListener('keydown', onKey)
@@ -192,7 +208,7 @@ function HeadChat({ onPhaseChange }, ref): JSX.Element {
             </div>
           )}
           {phase !== 'peek' && (
-            <div className="hc-input-bar">
+            <div className={`hc-input-bar${barFading ? ' hc-bar-evap' : ''}`}>
               <input
                 ref={inputRef}
                 className="hc-input"

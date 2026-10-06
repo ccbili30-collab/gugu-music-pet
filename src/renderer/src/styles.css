@@ -38,14 +38,19 @@ body {
 }
 
 .hc-evap {
-  animation: hc-evaporate 0.5s ease forwards;
+  animation: hc-evaporate 0.45s ease forwards;
 }
 
 @keyframes hc-evaporate {
   to {
     opacity: 0;
-    transform: translateY(-6px);
+    transform: translateY(-7px);
+    filter: blur(3px);
   }
+}
+
+.hc-bar-evap {
+  animation: hc-evaporate 0.4s ease forwards;
 }
 
 .hc-onboard {

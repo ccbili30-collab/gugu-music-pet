@@ -1,89 +1,223 @@
-import { useEffect, useRef, useState } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 
 interface ReplyItem {
   id: number
   text: string
   kaomoji?: string
+  /** 蒸发中 */
+  fading?: boolean
 }
 
 const MAX_STACK = 3
+/** 交流后空闲多久开始蒸发 */
+const IDLE_FADE_MS = 6000
+/** 悬停停留多久唤醒 */
+const DWELL_MS = 300
+/** 唤醒后移开多久回收 */
+const DWELL_OUT_MS = 1500
+/** 级联蒸发间隔 */
+const CASCADE_MS = 150
+
+export interface HeadChatHandle {
+  hover(over: boolean): void
+}
 
 /**
- * 头顶对话气泡：宠物头顶的行内聊天。
- * 输入框贴着头，AI 回复向上堆叠（最多 3 条，越旧越淡），新回复永远离头最近。
+ * 头顶对话气泡（注意力阶梯）：
+ * hidden →(悬停)peek →(300ms 停留)open →(打字)锁定 engaged →(空闲6s)fading 级联蒸发 → hidden
+ * 蒸发可被悬停/打字/新回复打断；Esc 立即收起；再次唤醒时旧回复以淡显回溯。
  */
-export function HeadChat({ open, onClose }: { open: boolean; onClose: () => void }): JSX.Element {
-  const [input, setInput] = useState('')
+export const HeadChat = forwardRef<HeadChatHandle, { onPhaseChange?: (active: boolean) => void }>(
+function HeadChat({ onPhaseChange }, ref): JSX.Element {
+  const [phase, setPhase] = useState<'hidden' | 'peek' | 'open' | 'fading'>('hidden')
   const [replies, setReplies] = useState<ReplyItem[]>([])
   const [thinking, setThinking] = useState(false)
+  const [input, setInput] = useState('')
+  const [onboarded, setOnboarded] = useState(() => !!localStorage.getItem('gugu-hc-onboarded'))
   const inputRef = useRef<HTMLInputElement>(null)
   const nextId = useRef(1)
+  const engagedRef = useRef(false)
+  const thinkingRef = useRef(false)
+  const lastActivityRef = useRef(0)
+  const hoverRef = useRef(false)
+  const timersRef = useRef<number[]>([])
+  const phaseRef = useRef(phase)
+  phaseRef.current = phase
+  const setPhaseBoth = (p: typeof phase): void => {
+    phaseRef.current = p
+    setPhase(p)
+    onPhaseChange?.(p !== 'hidden')
+  }
+  const clearTimers = (): void => {
+    for (const t of timersRef.current) window.clearTimeout(t)
+    timersRef.current = []
+  }
+  const later = (fn: () => void, ms: number): void => {
+    timersRef.current.push(window.setTimeout(fn, ms))
+  }
 
+  useImperativeHandle(ref, () => ({
+    hover(over: boolean): void {
+      hoverRef.current = over
+      clearTimers()
+      const armDwell = (): void => {
+        later(() => {
+          if (hoverRef.current && phaseRef.current === 'peek') {
+            setPhaseBoth('open')
+            localStorage.setItem('gugu-hc-onboarded', '1')
+            setOnboarded(true)
+            window.setTimeout(() => inputRef.current?.focus(), 60)
+          }
+        }, DWELL_MS)
+      }
+      if (over) {
+        if (phaseRef.current === 'hidden' || phaseRef.current === 'peek') {
+          setPhaseBoth('peek')
+          armDwell() // 闪烁重入也重新计时
+        } else if (phaseRef.current === 'fading') {
+          // 打断蒸发，恢复交流态
+          setReplies((cur) => cur.map((r) => ({ ...r, fading: false })))
+          setPhaseBoth('open')
+          lastActivityRef.current = Date.now()
+        }
+      } else {
+        if (phaseRef.current === 'peek') {
+          // 宠物动画/微走导致的瞬时 out 给 250ms 宽限
+          later(() => {
+            if (!hoverRef.current && phaseRef.current === 'peek') setPhaseBoth('hidden')
+          }, 250)
+        } else if (phaseRef.current === 'open' && !engagedRef.current) {
+          later(() => {
+            if (!hoverRef.current && phaseRef.current === 'open' && !engagedRef.current) setPhaseBoth('hidden')
+          }, DWELL_OUT_MS)
+        }
+      }
+    }
+  }))
+
+  // 空闲蒸发巡检
   useEffect(() => {
-    if (!open) return
-    // 打开即聚焦，直接可打字
-    window.setTimeout(() => inputRef.current?.focus(), 60)
-    const offReply = window.gugu.onChatReply((r) => {
+    const t = window.setInterval(() => {
+      if (
+        phaseRef.current === 'open' &&
+        engagedRef.current &&
+        !thinkingRef.current &&
+        Date.now() - lastActivityRef.current > IDLE_FADE_MS
+      ) {
+        setPhaseBoth('fading')
+        // 旧→新逐条蒸发
+        setReplies((cur) => {
+          cur.forEach((r, i) => {
+            later(() => {
+              setReplies((c) => c.map((x) => (x.id === r.id ? { ...x, fading: true } : x)))
+            }, i * CASCADE_MS)
+          })
+          return cur
+        })
+        later(() => {
+          if (phaseRef.current === 'fading') {
+            setPhaseBoth('hidden')
+            thinkingRef.current = false
+            setThinking(false)
+            setReplies((cur) => cur.slice(-2)) // 留最近两条作下次唤醒的淡显回溯
+          }
+        }, replies.length * CASCADE_MS + 600)
+      }
+    }, 500)
+    return () => window.clearInterval(t)
+  }, [replies.length])
+
+  // 大脑回复
+  useEffect(() => {
+    const off = window.gugu.onChatReply((r) => {
+      // hidden 态只有挂起中的回复才恢复会话（自主气泡走右侧语言区）
+      if ((phaseRef.current === 'hidden' && !thinkingRef.current) || !r.content) return
+      clearTimers()
+      thinkingRef.current = false
       setThinking(false)
-      if (!r.content) return
+      engagedRef.current = true
+      lastActivityRef.current = Date.now()
+      if (phaseRef.current === 'fading' || phaseRef.current === 'hidden') setPhaseBoth('open')
       setReplies((cur) => [...cur, { id: nextId.current++, text: r.content, kaomoji: r.kaomoji }].slice(-MAX_STACK))
     })
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') {
+        clearTimers()
+        engagedRef.current = false
+        setPhaseBoth('hidden')
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => {
-      offReply()
+      off()
       window.removeEventListener('keydown', onKey)
     }
-  }, [open, onClose])
-
-  if (!open) return <></>
+  }, [])
 
   const send = (): void => {
     const t = input.trim()
     if (!t || thinking) return
     setInput('')
+    engagedRef.current = true
+    lastActivityRef.current = Date.now()
+    thinkingRef.current = true
     setThinking(true)
     window.gugu.chat.send(t)
   }
 
+  const visible = phase !== 'hidden'
+
   return (
-    <div className="head-chat">
-      {/* 旧 → 新，输入框在最下（贴头），新回复紧挨输入框上方 */}
-      {replies.map((r, i) => (
-        <div
-          key={r.id}
-          className="hc-reply"
-          style={{ opacity: 0.5 + (0.5 * (i + 1)) / MAX_STACK }}
-        >
-          <span className="hc-text">{r.text.length > 90 ? r.text.slice(0, 90) + '…' : r.text}</span>
-          {r.kaomoji && <span className="hc-kaomoji">{r.kaomoji}</span>}
-        </div>
-      ))}
-      {thinking && (
-        <div className="hc-reply hc-thinking">
-          <span className="dot" />
-          <span className="dot" />
-          <span className="dot" />
+    <>
+      {phase === 'hidden' && !onboarded && (
+        <div className="head-chat hc-onboard">Put your mouse on me and you can talk♪</div>
+      )}
+      {visible && (
+        <div className={`head-chat hc-${phase}`} style={{ pointerEvents: phase === 'peek' ? 'none' : 'auto' }}>
+          {replies.map((r, i) => (
+            <div
+              key={r.id}
+              className={`hc-reply${r.fading ? ' hc-evap' : ''}`}
+              style={{ opacity: r.fading ? undefined : 0.5 + (0.5 * (i + 1)) / MAX_STACK }}
+            >
+              <span className="hc-text">{r.text.length > 90 ? r.text.slice(0, 90) + '…' : r.text}</span>
+              {r.kaomoji && <span className="hc-kaomoji">{r.kaomoji}</span>}
+            </div>
+          ))}
+          {thinking && phase !== 'peek' && (
+            <div className="hc-reply hc-thinking">
+              <span className="dot" />
+              <span className="dot" />
+              <span className="dot" />
+            </div>
+          )}
+          {phase !== 'peek' && (
+            <div className="hc-input-bar">
+              <input
+                ref={inputRef}
+                className="hc-input"
+                placeholder="Talk to Gugu…"
+                value={input}
+                maxLength={120}
+                onChange={(e) => {
+                  setInput(e.target.value)
+                  engagedRef.current = true
+                  lastActivityRef.current = Date.now()
+                }}
+                onKeyDown={(e) => {
+                  engagedRef.current = true
+                  lastActivityRef.current = Date.now()
+                  if (e.key === 'Enter') send()
+                }}
+              />
+              <button className="hc-send" onClick={send} disabled={thinking || !input.trim()}>
+                ↑
+              </button>
+            </div>
+          )}
         </div>
       )}
-      <div className="hc-input-bar">
-        <input
-          ref={inputRef}
-          className="hc-input"
-          placeholder="跟咕咕说点什么…"
-          value={input}
-          maxLength={120}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') send()
-          }}
-        />
-        <button className="hc-send" onClick={send} disabled={thinking || !input.trim()}>
-          ↑
-        </button>
-      </div>
-    </div>
+    </>
   )
 }
+)

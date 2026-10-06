@@ -6,7 +6,7 @@ import { bus, makeBubble, type BubbleData } from './pet/bus'
 import { computeRegions, reportRegions } from './pet/regions'
 import { Bubbles } from './overlay/Bubbles'
 import { MiniPlayer } from './overlay/MiniPlayer'
-import { HeadChat } from './overlay/HeadChat'
+import { HeadChat, type HeadChatHandle } from './overlay/HeadChat'
 import { HotComments } from './overlay/HotComments'
 
 
@@ -41,7 +41,8 @@ export default function App(): JSX.Element {
   const [hasTrack, setHasTrack] = useState(false)
   const [sceneMode, setSceneMode] = useState<'normal' | 'emo' | 'listening'>('normal')
   const [hotOpen, setHotOpen] = useState(false)
-  const [headChatOpen, setHeadChatOpen] = useState(false)
+  const headChatRef = useRef<HeadChatHandle>(null)
+  const [headChatActive, setHeadChatActive] = useState(false)
 
   // 音乐状态（迷你播放器/交互区域需要知道是否有曲目）
   useEffect(() => {
@@ -63,20 +64,16 @@ export default function App(): JSX.Element {
     return () => window.removeEventListener('contextmenu', onCtx)
   }, [])
 
-  // 托盘「看看热评」→ 打开热评卡；脚边按钮 → 头顶对话气泡
+  // 托盘「看看热评」→ 打开热评卡
   useEffect(() => {
     const off = bus.on('hotComments', () => setHotOpen(true))
-    const offHead = bus.on('headChat', () => setHeadChatOpen((v) => !v))
-    return () => {
-      off()
-      offHead()
-    }
+    return off
   }, [])
 
   // ---- 全屏窗模式：跟随层 + 穿透区域随宠物移动 ----
   const followRef = useRef<HTMLDivElement>(null)
-  const uiRef = useRef({ bubbleCount: 0, hasTrack: false, hotOpen: false, headChatOpen: false })
-  uiRef.current = { bubbleCount: bubbles.length, hasTrack, hotOpen, headChatOpen }
+  const uiRef = useRef({ bubbleCount: 0, hasTrack: false, hotOpen: false, headChatActive: false })
+  uiRef.current = { bubbleCount: bubbles.length, hasTrack, hotOpen, headChatActive }
 
   useEffect(() => {
     let lastReport = 0
@@ -100,6 +97,7 @@ export default function App(): JSX.Element {
         if (followRef.current) followRef.current.style.transform = `translate(${lx}px, ${ly}px)`
         report()
       }
+      eng.onPetHover = (over) => headChatRef.current?.hover(over)
       report(true)
     }
     attach()
@@ -218,10 +216,7 @@ export default function App(): JSX.Element {
       <div ref={hostRef} className="stage" />
       {sceneMode === 'emo' && <div className="emo-vignette" />}
       <div ref={followRef} className="follow-layer">
-        <button className="chat-entry" title="和咕咕聊天" onClick={() => bus.emit('headChat', undefined)}>
-          <img src="icons/chat.png" alt="" draggable={false} />
-        </button>
-        <HeadChat open={headChatOpen} onClose={() => setHeadChatOpen(false)} />
+        <HeadChat ref={headChatRef} onPhaseChange={setHeadChatActive} />
         <Bubbles
           items={bubbles}
           onInvite={(accept) => {

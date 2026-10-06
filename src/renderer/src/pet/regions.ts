@@ -12,11 +12,11 @@ interface RegionInputs {
   bubbleCount: number
   hasTrack: boolean
   hotOpen?: boolean
-  headChatOpen?: boolean
+  headChatActive?: boolean
 }
 
 /** 计算当前需要接收鼠标的窗口区域（窗口本地坐标；全屏窗模式下随宠物移动） */
-export function computeRegions({ petX, petY, bubbleCount, hasTrack, hotOpen, headChatOpen }: RegionInputs): UiRect[] {
+export function computeRegions({ petX, petY, bubbleCount, hasTrack, hotOpen, headChatActive }: RegionInputs): UiRect[] {
   const rects: UiRect[] = []
   // 宠物本体（精灵 96px + 余量）
   rects.push({ x: petX - 60, y: petY - 110, w: 120, h: 116 })
@@ -24,9 +24,7 @@ export function computeRegions({ petX, petY, bubbleCount, hasTrack, hotOpen, hea
     // 迷你播放器（宠物左上方，与右侧语言区物理隔离）
     rects.push({ x: petX - 258, y: petY - 138, w: 254, h: 46 })
   }
-  // 聊天入口（脚边右侧）
-  rects.push({ x: petX + 50, y: petY - 42, w: 44, h: 44 })
-  if (headChatOpen) {
+  if (headChatActive) {
     // 头顶对话气泡（输入框 + 最多3条堆叠回复）
     rects.push({ x: petX - 122, y: petY - 330, w: 250, h: 240 })
   }

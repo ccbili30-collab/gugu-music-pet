@@ -272,6 +272,9 @@ export class PetEngine {
   /** 每帧宠物移动回调（App 用它驱动跟随层与穿透区域上报） */
   onPetMoved: ((localX: number, localY: number) => void) | null = null
 
+  /** 悬停进入/离开（头顶对话的唤醒信号；拖拽中抑制） */
+  onPetHover: ((over: boolean) => void) | null = null
+
   private async refreshBoundsIfCrossed(): Promise<void> {
     // 高速飞行跨屏时刷新工作区
     const ph = this.physics
@@ -311,6 +314,11 @@ export class PetEngine {
 
   private setupInteraction(): void {
     const sprite = this.sprite
+
+    sprite.on('pointerover', () => {
+      if (!this.dragging) this.onPetHover?.(true)
+    })
+    sprite.on('pointerout', () => this.onPetHover?.(false))
 
     sprite.on('pointerdown', (e) => {
       // 指针捕获：快速拖拽时光标跑出窗口仍持续收到事件

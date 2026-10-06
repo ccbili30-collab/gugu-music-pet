@@ -20,9 +20,11 @@ export function computeRegions({ petX, petY, bubbleCount, hasTrack, hotOpen }: R
   // 宠物本体（精灵 96px + 余量）
   rects.push({ x: petX - 60, y: petY - 110, w: 120, h: 116 })
   if (hasTrack) {
-    // 迷你播放器（宠物头顶）
-    rects.push({ x: petX - 116, y: petY - 152, w: 250, h: 50 })
+    // 迷你播放器（宠物左上方，与右侧语言区物理隔离）
+    rects.push({ x: petX - 258, y: petY - 138, w: 254, h: 46 })
   }
+  // 聊天入口（脚边右侧）
+  rects.push({ x: petX + 50, y: petY - 42, w: 44, h: 44 })
   if (bubbleCount > 0) {
     // 右侧气泡带
     rects.push({ x: petX + 44, y: petY - 170, w: 254, h: 176 })

@@ -198,9 +198,10 @@ export default function App(): JSX.Element {
     return () => timers.forEach((t) => window.clearTimeout(t))
   }, [bubbles])
 
+  // 语言区单条化：新气泡直接替换旧气泡，杜绝叠罗汉
   useEffect(() => {
     const off = bus.on('bubble', (b) => {
-      setBubbles((cur) => [...cur.slice(-1), b])
+      setBubbles([b])
     })
     return off
   }, [])
@@ -211,6 +212,9 @@ export default function App(): JSX.Element {
       <div ref={hostRef} className="stage" />
       {sceneMode === 'emo' && <div className="emo-vignette" />}
       <div ref={followRef} className="follow-layer">
+        <button className="chat-entry" title="和咕咕聊天" onClick={() => window.gugu.openChat()}>
+          <img src="icons/chat.png" alt="" draggable={false} />
+        </button>
         <Bubbles
           items={bubbles}
           onInvite={(accept) => {

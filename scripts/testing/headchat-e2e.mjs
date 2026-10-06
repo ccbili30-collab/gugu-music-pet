@@ -55,14 +55,17 @@ const phase = () => p.ev(`(() => { const h = document.querySelector(".head-chat"
 // 1. 引导
 check('首次引导提示', (await p.ev(`!!document.querySelector(".hc-onboard")`)) === true)
 
-// 2. 悬停 peek
+// 2. 双击唤醒（立刻弹出）
 const PC = JSON.parse(await p.ev(`JSON.stringify(window.__guguEngine.petLocal)`))
-await p.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: Math.round(PC.x), y: Math.round(PC.y - 40), button: 'none', pointerType: 'mouse' })
-check('悬停即 peek 虚影', (await poll(async () => (await phase()) === 'peek', 2000)) === true)
-check('peek 无输入框', (await p.ev(`!document.querySelector(".hc-input")`)) === true)
-
-// 3. 停留唤醒
-check('停留唤醒 open', (await poll(async () => (await phase()) === 'open', 2000)) === true)
+const cx = Math.round(PC.x), cy = Math.round(PC.y - 30)
+for (const _ of [1, 2]) {
+  await p.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: cx, y: cy, button: 'left', clickCount: 1, pointerType: 'mouse' })
+  await sleep(60)
+  await p.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: cx, y: cy, button: 'left', clickCount: 1, pointerType: 'mouse' })
+  await sleep(140)
+}
+check('双击立刻 open', (await poll(async () => (await phase()) === 'open', 1500)) === true)
+check('唤醒即单对话框(无历史回复)', (await p.ev(`document.querySelectorAll(".hc-reply").length`)) === 0)
 check('自动聚焦', (await poll(async () => (await p.ev(`document.activeElement?.classList.contains("hc-input")`)) === true, 1500)) === true)
 check('引导已消失', (await p.ev(`!document.querySelector(".hc-onboard")`)) === true)
 
@@ -90,10 +93,15 @@ const fadingSeen = await poll(async () => {
 check('顺序消散 → hidden', fadingSeen === true)
 check('输入框参与顺序消散', sawBarEvap === true)
 
-// 7. 再悬停 → 唤醒 + 回溯
-await p.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: Math.round(PC.x), y: Math.round(PC.y - 40), button: 'none', pointerType: 'mouse' })
-check('再悬停唤醒', (await poll(async () => (await phase()) === 'open', 3000)) === true)
-check('历史回溯(最近回复淡显)', (await p.ev(`document.querySelectorAll(".hc-reply").length`)) >= 1)
+// 7. 再双击 → 唤醒且不带历史
+for (const _ of [1, 2]) {
+  await p.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: cx, y: cy, button: 'left', clickCount: 1, pointerType: 'mouse' })
+  await sleep(60)
+  await p.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: cx, y: cy, button: 'left', clickCount: 1, pointerType: 'mouse' })
+  await sleep(140)
+}
+check('再双击唤醒', (await poll(async () => (await phase()) === 'open', 3000)) === true)
+check('不带历史(单对话框)', (await p.ev(`document.querySelectorAll(".hc-reply").length`)) === 0)
 
 console.log(failed === 0 ? '\nheadchat-e2e: ALL PASS' : `\nheadchat-e2e: ${failed} FAILED`)
 process.exit(failed === 0 ? 0 : 1)

@@ -98,6 +98,7 @@ export default function App(): JSX.Element {
         report()
       }
       eng.onPetHover = (over) => headChatRef.current?.hover(over)
+      eng.onPetDblClick = () => headChatRef.current?.open()
       report(true)
     }
     attach()

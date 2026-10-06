@@ -272,8 +272,11 @@ export class PetEngine {
   /** 每帧宠物移动回调（App 用它驱动跟随层与穿透区域上报） */
   onPetMoved: ((localX: number, localY: number) => void) | null = null
 
-  /** 悬停进入/离开（头顶对话的唤醒信号；拖拽中抑制） */
+  /** 悬停进入/离开（消散打断/未输入回收用；拖拽中抑制） */
   onPetHover: ((over: boolean) => void) | null = null
+
+  /** 双击（头顶对话框唤醒） */
+  onPetDblClick: (() => void) | null = null
 
   private async refreshBoundsIfCrossed(): Promise<void> {
     // 高速飞行跨屏时刷新工作区
@@ -444,6 +447,7 @@ export class PetEngine {
         const w = this.worldPointer(e)
         if (now - this.lastClickAt < 360 && Math.hypot(w.x - this.pointerDownPos.x, w.y - this.pointerDownPos.y) < 16) {
           this.lastClickAt = 0
+          this.onPetDblClick?.()
           window.gugu.emitEvent('dblclick')
         } else {
           this.lastClickAt = now

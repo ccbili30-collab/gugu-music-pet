@@ -24,12 +24,6 @@ body {
 }
 
 /* ---------- 头顶对话气泡（注意力阶梯） ---------- */
-.head-chat.hc-peek {
-  opacity: 0.25;
-  transform: translateY(8px) scale(0.92);
-  transition: opacity 0.25s ease, transform 0.25s ease;
-}
-
 .head-chat.hc-open,
 .head-chat.hc-fading {
   opacity: 1;

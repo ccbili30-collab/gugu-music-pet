@@ -11,8 +11,6 @@ interface ReplyItem {
 const MAX_STACK = 3
 /** 交流后空闲多久开始蒸发 */
 const IDLE_FADE_MS = 6000
-/** 悬停停留多久唤醒 */
-const DWELL_MS = 300
 /** 唤醒后移开多久回收 */
 const DWELL_OUT_MS = 1500
 /** 级联蒸发间隔 */
@@ -20,6 +18,8 @@ const CASCADE_MS = 150
 
 export interface HeadChatHandle {
   hover(over: boolean): void
+  /** 双击唤醒：立刻弹出单个输入框（不带历史回复） */
+  open(): void
 }
 
 /**
@@ -29,7 +29,7 @@ export interface HeadChatHandle {
  */
 export const HeadChat = forwardRef<HeadChatHandle, { onPhaseChange?: (active: boolean) => void }>(
 function HeadChat({ onPhaseChange }, ref): JSX.Element {
-  const [phase, setPhase] = useState<'hidden' | 'peek' | 'open' | 'fading'>('hidden')
+  const [phase, setPhase] = useState<'hidden' | 'open' | 'fading'>('hidden')
   const [replies, setReplies] = useState<ReplyItem[]>([])
   const [thinking, setThinking] = useState(false)
   const [input, setInput] = useState('')
@@ -79,7 +79,7 @@ function HeadChat({ onPhaseChange }, ref): JSX.Element {
           thinkingRef.current = false
           setThinking(false)
           setBarFading(false)
-          setReplies((cur) => cur.slice(-2)) // 留最近两条作下次唤醒的淡显回溯
+          setReplies([])
         }
       },
       n * step + 460
@@ -87,24 +87,24 @@ function HeadChat({ onPhaseChange }, ref): JSX.Element {
   }
 
   useImperativeHandle(ref, () => ({
+    /** 双击唤醒：立刻弹出输入框，不带历史 */
+    open(): void {
+      clearTimers()
+      setReplies([])
+      setBarFading(false)
+      setThinking(false)
+      thinkingRef.current = false
+      engagedRef.current = false
+      setPhaseBoth('open')
+      localStorage.setItem('gugu-hc-onboarded', '1')
+      setOnboarded(true)
+      window.setTimeout(() => inputRef.current?.focus(), 60)
+    },
     hover(over: boolean): void {
       hoverRef.current = over
       clearTimers()
-      const armDwell = (): void => {
-        later(() => {
-          if (hoverRef.current && phaseRef.current === 'peek') {
-            setPhaseBoth('open')
-            localStorage.setItem('gugu-hc-onboarded', '1')
-            setOnboarded(true)
-            window.setTimeout(() => inputRef.current?.focus(), 60)
-          }
-        }, DWELL_MS)
-      }
       if (over) {
-        if (phaseRef.current === 'hidden' || phaseRef.current === 'peek') {
-          setPhaseBoth('peek')
-          armDwell() // 闪烁重入也重新计时
-        } else if (phaseRef.current === 'fading') {
+        if (phaseRef.current === 'fading') {
           // 打断消散，恢复交流态
           clearTimers()
           setReplies((cur) => cur.map((r) => ({ ...r, fading: false })))
@@ -112,17 +112,10 @@ function HeadChat({ onPhaseChange }, ref): JSX.Element {
           setPhaseBoth('open')
           lastActivityRef.current = Date.now()
         }
-      } else {
-        if (phaseRef.current === 'peek') {
-          // 宠物动画/微走导致的瞬时 out 给 250ms 宽限
-          later(() => {
-            if (!hoverRef.current && phaseRef.current === 'peek') setPhaseBoth('hidden')
-          }, 250)
-        } else if (phaseRef.current === 'open' && !engagedRef.current) {
-          later(() => {
-            if (!hoverRef.current && phaseRef.current === 'open' && !engagedRef.current) cascadeClose(true)
-          }, DWELL_OUT_MS)
-        }
+      } else if (phaseRef.current === 'open' && !engagedRef.current) {
+        later(() => {
+          if (!hoverRef.current && phaseRef.current === 'open' && !engagedRef.current) cascadeClose(true)
+        }, DWELL_OUT_MS)
       }
     }
   }))
@@ -189,7 +182,7 @@ function HeadChat({ onPhaseChange }, ref): JSX.Element {
         <div className="head-chat hc-onboard">Put your mouse on me and you can talk♪</div>
       )}
       {visible && (
-        <div className={`head-chat hc-${phase}`} style={{ pointerEvents: phase === 'peek' ? 'none' : 'auto' }}>
+        <div className={`head-chat hc-${phase}`}>
           {replies.map((r, i) => (
             <div
               key={r.id}
@@ -200,15 +193,14 @@ function HeadChat({ onPhaseChange }, ref): JSX.Element {
               {r.kaomoji && <span className="hc-kaomoji">{r.kaomoji}</span>}
             </div>
           ))}
-          {thinking && phase !== 'peek' && (
+          {thinking && (
             <div className="hc-reply hc-thinking">
               <span className="dot" />
               <span className="dot" />
               <span className="dot" />
             </div>
           )}
-          {phase !== 'peek' && (
-            <div className={`hc-input-bar${barFading ? ' hc-bar-evap' : ''}`}>
+          <div className={`hc-input-bar${barFading ? ' hc-bar-evap' : ''}`}>
               <input
                 ref={inputRef}
                 className="hc-input"
@@ -229,8 +221,7 @@ function HeadChat({ onPhaseChange }, ref): JSX.Element {
               <button className="hc-send" onClick={send} disabled={thinking || !input.trim()}>
                 ↑
               </button>
-            </div>
-          )}
+          </div>
         </div>
       )}
     </>

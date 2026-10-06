@@ -436,8 +436,6 @@ export class PetEngine {
         const w = this.worldPointer(e)
         if (now - this.lastClickAt < 360 && Math.hypot(w.x - this.pointerDownPos.x, w.y - this.pointerDownPos.y) < 16) {
           this.lastClickAt = 0
-          window.gugu.openChat()
-          bus.emit('openChat', undefined)
           window.gugu.emitEvent('dblclick')
         } else {
           this.lastClickAt = now

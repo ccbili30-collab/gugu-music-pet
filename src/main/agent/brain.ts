@@ -201,9 +201,8 @@ export class Brain {
           this.ctx = this.ctx.slice(cut)
         }
         sendToChat('chat:reply', { ok: true, content: clean, kaomoji })
-        // 气泡（右侧）：回复太长就截第一句
-        const short = clean.split(/[。！？!?\n]/)[0]?.slice(0, 26) || clean.slice(0, 26)
-        sendToPet('pet:bubble', { kind: 'say', text: short, kaomoji } as PetBubbleMsg)
+        // 旁边气泡只放颜文字（正文由头顶对话展示，别双份）
+        sendToPet('pet:bubble', { kind: 'say', kaomoji } as PetBubbleMsg)
         void this.memoryExtract(userText, clean, cfg)
         return
       }

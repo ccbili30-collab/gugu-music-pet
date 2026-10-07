@@ -31,6 +31,7 @@ export class AudioEngine {
     this.el.addEventListener('pause', () => this.report())
     this.el.addEventListener('error', () => {
       if (!this.track) return
+      window.setTimeout(() => this.report(), 400)
       if (this.lastErrorTrackId === this.track.id) {
         this.onError?.('这首歌的音频流出问题了，换一首试试…')
         return
@@ -40,9 +41,8 @@ export class AudioEngine {
       this.next(true)
     })
     this.offCommand = window.gugu.onMusicCommand((cmd) => this.handleCommand(cmd))
-    this.reportTimer = window.setInterval(() => {
-      if (!this.el.paused) this.report()
-    }, 1000)
+    // 无论播放与否每秒上报：主进程靠它检测"实际已停"（脱节会说'还在播放'）
+    this.reportTimer = window.setInterval(() => this.report(), 1000)
     void this.restore()
   }
 

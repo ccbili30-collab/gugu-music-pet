@@ -47,6 +47,8 @@ export class MusicService {
     trial: false
   }
   private onStateChange: ((s: PlayerState, l: LoginState) => void) | null = null
+  private lastReportAt = 0
+  private staleTimer: NodeJS.Timeout | null = null
 
   async init(): Promise<void> {
     // 恢复登录态
@@ -143,6 +145,7 @@ export class MusicService {
   }
 
   report(state: Partial<PlayerState>): void {
+    this.lastReportAt = Date.now()
     const prevVolume = this.player.volume
     const prevTrackId = this.player.track?.id
     this.player = { ...this.player, ...state }
@@ -150,6 +153,16 @@ export class MusicService {
     if (typeof state.volume === 'number' && state.volume !== prevVolume) this.persist()
     if (this.player.track) {
       this.player.queueCount = this.queue.length
+    }
+    // 失联守卫：声称播放中但 4s 无上报（渲染层崩溃/音频悄悄死掉）→ 判定已停，
+    // 否则大脑拿着旧状态回"还在播放"而实际没声音
+    if (!this.staleTimer) {
+      this.staleTimer = setInterval(() => {
+        if (this.player.playing && Date.now() - this.lastReportAt > 4000) {
+          this.player.playing = false
+          this.fireState()
+        }
+      }, 2000)
     }
     this.fireState()
     // 换歌 → 场景引擎（AI 歌评/emo 维护），避免 import 环用动态加载

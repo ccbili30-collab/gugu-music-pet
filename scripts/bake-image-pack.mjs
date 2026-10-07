@@ -11,8 +11,8 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const id = process.argv[2] ?? 'dafeiyu'
 const SRC = join(root, 'characters', id, 'stickers')
 const OUT = join(root, 'src/renderer/public/characters', id)
-const CELL = 320
-const TARGET_H = 300 // 高清源（~400px）只做 ~1.3x 温和缩小，显示时再由 pack.scale 缩到 ~104px
+// 格子自适应：按最大原图边长取整到 16 的倍数（+16 余量）——原图直出，零压缩
+let CELL = 448
 
 /** 洪水填充抠白底：只抠与四边连通的近白背景，内部白色（高光/装饰）完整保留。
  *  边缘做 2 轮近白蚀刻吃掉 JPEG 白晕，再对边界带做 3x3 alpha 羽化。 */
@@ -131,9 +131,10 @@ function scaleRgba(src, srcW, srcH, dstW, dstH) {
       }
       const di = (y * dstW + x) * 4
       if (ca > 0.0001) {
-        out[di] = Math.round(cr / ca)
-        out[di + 1] = Math.round(cg / ca)
-        out[di + 2] = Math.round(cb / ca)
+        // cr 是预乘累加（a∈[0,1]），ca 是 alpha 原值累加（0-255）：反预乘要 ×255
+        out[di] = Math.min(255, Math.round((255 * cr) / ca))
+        out[di + 1] = Math.min(255, Math.round((255 * cg) / ca))
+        out[di + 2] = Math.min(255, Math.round((255 * cb) / ca))
         out[di + 3] = Math.round(ca / area)
       }
     }
@@ -187,7 +188,7 @@ for (const [slot, spec] of Object.entries(SLOT_MAP)) {
       const img = loadSticker(file)
       const box = contentBox(img)
       if (!box) continue
-      const scale = Math.min(TARGET_H / box.h, (CELL - 12) / box.w, 1)
+      const scale = Math.min((CELL - 12) / box.h, (CELL - 12) / box.w, 1)
       const dw = Math.max(1, Math.round(box.w * scale))
       const dh = Math.max(1, Math.round(box.h * scale))
       const scaled = scaleRgba(

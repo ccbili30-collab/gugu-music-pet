@@ -7,67 +7,67 @@
   "sprite": {
     "image": "sheet.png",
     "frameSize": [
-      320,
-      320
+      448,
+      448
     ],
-    "scale": 0.325
+    "scale": 0.23214285714285715
   },
   "frames": {
     "idle_happy_ok": {
       "index": 0,
-      "groundRow": 311
+      "groundRow": 439
     },
     "idle_see_zhenjing": {
       "index": 1,
-      "groundRow": 311
+      "groundRow": 439
     },
     "stand_see_zhenjing": {
       "index": 2,
-      "groundRow": 311
+      "groundRow": 439
     },
     "walk_right_daily_ganfan": {
       "index": 3,
-      "groundRow": 311
+      "groundRow": 439
     },
     "fly_right_happy_piaole": {
       "index": 4,
-      "groundRow": 311
+      "groundRow": 439
     },
     "sit_work_tangping": {
       "index": 5,
-      "groundRow": 311
+      "groundRow": 439
     },
     "sleep_sleep_shuijiao": {
       "index": 6,
-      "groundRow": 311
+      "groundRow": 439
     },
     "hum_shy_haixiu": {
       "index": 7,
-      "groundRow": 311
+      "groundRow": 439
     },
     "dance_happy_deyi": {
       "index": 8,
-      "groundRow": 311
+      "groundRow": 439
     },
     "dance_like_bixin": {
       "index": 9,
-      "groundRow": 311
+      "groundRow": 439
     },
     "happy_like_bixin": {
       "index": 10,
-      "groundRow": 311
+      "groundRow": 439
     },
     "hurt_sad_yun": {
       "index": 11,
-      "groundRow": 311
+      "groundRow": 439
     },
     "drag_surprised_xia": {
       "index": 12,
-      "groundRow": 311
+      "groundRow": 439
     },
     "peck_fool_buyao": {
       "index": 13,
-      "groundRow": 311
+      "groundRow": 439
     }
   },
   "slots": {

@@ -4,8 +4,7 @@ import { writeFileSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { deflateSync } from 'node:zlib'
 
-const CELL = 320
-const TARGET_H = 300 // 高清格：显示时由 pack.scale 缩小，放大宠物也不糊
+const CELL = 448 // 原图直出格（超格才温和缩小）
 
 // ---- PNG 编码（RGBA8 filter0，与 scripts/lib-png 同款）----
 const CRC_TABLE = (() => {
@@ -147,7 +146,7 @@ export async function importCustomPack(): Promise<ImportResult> {
       if (img.isEmpty()) continue
       // 预缩到目标高度内（resize 只给 height 时按比例）
       const size = img.getSize()
-      if (size.height > 320) img = img.resize({ height: 320 })
+      if (size.height > 448) img = img.resize({ height: 448 })
       const bmp = img.toBitmap({ scaleFactor: 1 })
       const { width: w, height: h } = img.getSize()
       // BGRA → RGBA + 软抠白
@@ -160,7 +159,7 @@ export async function importCustomPack(): Promise<ImportResult> {
       floodKeyWhite(rgba, w, h)
       const box = contentBox(rgba, w, h)
       if (!box) continue
-      const scale = Math.min(TARGET_H / box.h, (CELL - 12) / box.w, 1)
+      const scale = Math.min((CELL - 12) / box.h, (CELL - 12) / box.w, 1)
       const dw = Math.max(1, Math.round(box.w * scale))
       const dh = Math.max(1, Math.round(box.h * scale))
       // 区域平均重采样（box filter，预乘 alpha）
@@ -188,9 +187,9 @@ export async function importCustomPack(): Promise<ImportResult> {
           }
           const di = (y * dw + x) * 4
           if (ca > 0.0001) {
-            cell[di] = Math.round(cr / ca)
-            cell[di + 1] = Math.round(cg / ca)
-            cell[di + 2] = Math.round(cb / ca)
+            cell[di] = Math.min(255, Math.round((255 * cr) / ca))
+            cell[di + 1] = Math.min(255, Math.round((255 * cg) / ca))
+            cell[di + 2] = Math.min(255, Math.round((255 * cb) / ca))
             cell[di + 3] = Math.round(ca / area)
           }
         }

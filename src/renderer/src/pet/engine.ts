@@ -192,8 +192,9 @@ export class PetEngine {
     this.sprite.scale.set(this.loaded.scale)
     this.sprite.eventMode = 'static'
     // hitArea 用的是以 position（脚底中心）为原点的本地空间，与 anchor 无关：
-    // anchor(0.5,1) 时画面在 (-w/2,-h)-(w/2,0)，判定框必须对齐这里
-    this.sprite.hitArea = new Rectangle(-frameSize[0] / 2, -frameSize[1], frameSize[0], frameSize[1])
+    // anchor(0.5,1) 时画面在 (-w/2,-h)-(w/2,0)；底部再扩 48px——
+    // 单击弹跳把 pet 弹离鼠标的瞬间，双击的第二击仍可命中
+    this.sprite.hitArea = new Rectangle(-frameSize[0] / 2, -frameSize[1], frameSize[0], frameSize[1] + 48)
     this.sprite.cursor = 'grab'
     this.motionContainer.addChild(this.sprite)
     // 交互挂到新 sprite 上

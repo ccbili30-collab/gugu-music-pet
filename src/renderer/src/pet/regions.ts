@@ -18,8 +18,8 @@ interface RegionInputs {
 /** 计算当前需要接收鼠标的窗口区域（窗口本地坐标；全屏窗模式下随宠物移动） */
 export function computeRegions({ petX, petY, bubbleCount, hasTrack, hotOpen, headChatActive }: RegionInputs): UiRect[] {
   const rects: UiRect[] = []
-  // 宠物本体（精灵 96px + 余量）
-  rects.push({ x: petX - 60, y: petY - 110, w: 120, h: 116 })
+  // 宠物本体（含弹跳容错的下扩 48px 可点区）
+  rects.push({ x: petX - 60, y: petY - 110, w: 120, h: 164 })
   if (hasTrack) {
     // 迷你播放器（宠物左上方，与右侧语言区物理隔离）
     rects.push({ x: petX - 258, y: petY - 138, w: 254, h: 46 })

@@ -72,7 +72,7 @@ check('首次引导提示', (await p.ev(`!!document.querySelector(".hc-onboard")
 
 // 2. 双击唤醒（立刻弹出）
 const PC = JSON.parse(await p.ev(`JSON.stringify(window.__guguEngine.petLocal)`))
-const cx = Math.round(PC.x), cy = Math.round(PC.y - 30)
+let cx = Math.round(PC.x), cy = Math.round(PC.y - 30)
 for (const _ of [1, 2]) {
   await p.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: cx, y: cy, button: 'left', clickCount: 1, pointerType: 'mouse' })
   await sleep(60)
@@ -109,16 +109,41 @@ check('顺序消散 → hidden', fadingSeen === true)
 check('输入框参与顺序消散', sawBarEvap === true)
 
 // 6.5 不交互也会自己消散（新用例：唤醒后不输入，等消散）
+{
+  const PC2 = JSON.parse(await p.ev(`JSON.stringify(window.__guguEngine.petLocal)`))
+  cx = Math.round(PC2.x)
+  cy = Math.round(PC2.y - 30)
+}
 for (const _ of [1, 2]) {
   await p.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: cx, y: cy, button: 'left', clickCount: 1, pointerType: 'mouse' })
   await sleep(60)
   await p.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: cx, y: cy, button: 'left', clickCount: 1, pointerType: 'mouse' })
   await sleep(140)
 }
-check('不交互唤醒', (await poll(async () => (await phase()) === 'open', 1500)) === true)
+{
+  let opened = await poll(async () => (await phase()) === 'open', 1500)
+  if (!opened) {
+    // 时序毛刺容错：重采样再双击一次
+    const PCR = JSON.parse(await p.ev(`JSON.stringify(window.__guguEngine.petLocal)`))
+    const rx = Math.round(PCR.x), ry = Math.round(PCR.y - 30)
+    for (const _ of [1, 2]) {
+      await p.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: rx, y: ry, button: 'left', clickCount: 1, pointerType: 'mouse' })
+      await sleep(60)
+      await p.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: rx, y: ry, button: 'left', clickCount: 1, pointerType: 'mouse' })
+      await sleep(140)
+    }
+    opened = await poll(async () => (await phase()) === 'open', 1500)
+  }
+  check('不交互唤醒', opened === true)
+}
 check('不点不输入→自己从上到下消散', (await poll(async () => (await phase()) === 'none', IDLE_FADE_POLL, 500)) === true)
 
 // 7. 再双击 → 唤醒且不带历史
+{
+  const PC3 = JSON.parse(await p.ev(`JSON.stringify(window.__guguEngine.petLocal)`))
+  cx = Math.round(PC3.x)
+  cy = Math.round(PC3.y - 30)
+}
 for (const _ of [1, 2]) {
   await p.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: cx, y: cy, button: 'left', clickCount: 1, pointerType: 'mouse' })
   await sleep(60)

@@ -1,0 +1,176 @@
+{
+  "id": "dafeiyu",
+  "name": "大肥鱼",
+  "version": "1.3.0",
+  "type": "frames",
+  "pixel": false,
+  "sprite": {
+    "image": "sheet.png",
+    "frameSize": [
+      128,
+      128
+    ],
+    "scale": 0.78
+  },
+  "frames": {
+    "idle_happy_ok": {
+      "index": 0,
+      "groundRow": 119
+    },
+    "idle_see_zhenjing": {
+      "index": 1,
+      "groundRow": 119
+    },
+    "stand_see_zhenjing": {
+      "index": 2,
+      "groundRow": 119
+    },
+    "walk_right_daily_ganfan": {
+      "index": 3,
+      "groundRow": 119
+    },
+    "fly_right_happy_piaole": {
+      "index": 4,
+      "groundRow": 119
+    },
+    "sit_work_tangping": {
+      "index": 5,
+      "groundRow": 119
+    },
+    "sleep_sleep_shuijiao": {
+      "index": 6,
+      "groundRow": 119
+    },
+    "hum_shy_haixiu": {
+      "index": 7,
+      "groundRow": 119
+    },
+    "dance_happy_deyi": {
+      "index": 8,
+      "groundRow": 119
+    },
+    "dance_like_bixin": {
+      "index": 9,
+      "groundRow": 119
+    },
+    "happy_like_bixin": {
+      "index": 10,
+      "groundRow": 119
+    },
+    "hurt_sad_yun": {
+      "index": 11,
+      "groundRow": 119
+    },
+    "drag_surprised_xia": {
+      "index": 12,
+      "groundRow": 119
+    },
+    "peck_fool_buyao": {
+      "index": 13,
+      "groundRow": 119
+    }
+  },
+  "slots": {
+    "idle": {
+      "frames": [
+        "idle_happy_ok",
+        "idle_see_zhenjing"
+      ],
+      "fps": 0.7,
+      "loop": true
+    },
+    "stand": {
+      "frames": [
+        "stand_see_zhenjing"
+      ],
+      "fps": 0.7,
+      "loop": true
+    },
+    "walk_right": {
+      "frames": [
+        "walk_right_daily_ganfan"
+      ],
+      "fps": 0.7,
+      "loop": true
+    },
+    "fly_right": {
+      "frames": [
+        "fly_right_happy_piaole"
+      ],
+      "fps": 0.7,
+      "loop": true
+    },
+    "sit": {
+      "frames": [
+        "sit_work_tangping"
+      ],
+      "fps": 0.7,
+      "loop": true
+    },
+    "sleep": {
+      "frames": [
+        "sleep_sleep_shuijiao"
+      ],
+      "fps": 0.7,
+      "loop": true
+    },
+    "hum": {
+      "frames": [
+        "hum_shy_haixiu"
+      ],
+      "fps": 0.7,
+      "loop": true
+    },
+    "dance": {
+      "frames": [
+        "dance_happy_deyi",
+        "dance_like_bixin"
+      ],
+      "fps": 2.2,
+      "loop": true
+    },
+    "happy": {
+      "frames": [
+        "happy_like_bixin"
+      ],
+      "fps": 0.7,
+      "loop": true
+    },
+    "hurt": {
+      "frames": [
+        "hurt_sad_yun"
+      ],
+      "fps": 0.7,
+      "loop": true
+    },
+    "drag": {
+      "frames": [
+        "drag_surprised_xia"
+      ],
+      "fps": 0.7,
+      "loop": true
+    },
+    "peck": {
+      "frames": [
+        "peck_fool_buyao"
+      ],
+      "fps": 0.7,
+      "loop": true
+    },
+    "walk_left": {
+      "mirrorOf": "walk_right"
+    },
+    "fly_left": {
+      "mirrorOf": "fly_right"
+    }
+  },
+  "fallbacks": {
+    "dance": "idle",
+    "happy": "idle",
+    "hurt": "idle",
+    "peck": "idle",
+    "hum": "sit",
+    "walk_left": "idle",
+    "fly_left": "idle"
+  }
+}

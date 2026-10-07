@@ -2,6 +2,12 @@
 
 > 更新时间：2026-09-28 · M1–M7 全部完成（M7 于新机器收尾并实测） · 项目进度：可交付
 
+## 2026-10-07 大更新速览
+
+- **宠物换代**：预设只剩**大肥鱼**（DeepSeek 鲸鱼娘贴纸，dafeiyu-001 v1.3.0 24 张，yyh-001/dsh-meme-packs，personal 许可，见 characters/dafeiyu/CREDIT.md）。烘焙链 `scripts/bake-image-pack.mjs`（sips 转 png → 纯 Node PNG 解码 lib-png.mjs → **软抠白**（纯白透明、白描边羽化）→ 底对齐组 128 格 sheet）。pack.pixel=false → linear 采样（照片系）。pigeon/chick 已删（托盘图标固定入库不再生成；应用图标改为大肥鱼）。
+- **自定义宠物导入**：设置面板「＋导入图片自制宠物」→ 主进程 petpack.ts（dialog 多选 → nativeImage → 抠白组包）→ userData/characters/custom-* → **gugu-pack://<id>/<file> 协议**供渲染层加载（pack-scheme.ts，loadPack 内置路径 404 时回退协议）。CSP 已加 gugu-pack:。
+- **前端「奶油玻璃×珊瑚」**：:root tokens（--paper/--ink/--accent 珊瑚）；气泡/播放器/头顶对话/热评卡/设置面板统一换肤；**播放器重构**：封面图+歌名歌手+进度条+话筒+控制（regions 已同步新尺寸）。
+
 ## 这是什么项目
 
 把 GitHub 上的老项目 `gugu-desktop-pet`（Python/tkinter/Windows 桌面鸽子）复活改造成 **macOS 音乐桌宠**：会聊天、懂音乐、能随音律舞动。参考旧仓库 `/Users/noven/bisai/music pet/gugu-desktop-pet`（旧项目仍在 GitHub 上， brains 的提示词/驱动力/记忆格式都已移植进本项目）。

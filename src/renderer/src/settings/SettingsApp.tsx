@@ -36,7 +36,8 @@ export function SettingsApp(): JSX.Element {
   const [volume, setVolume] = useState(0.8)
   // 角色包
   const [packs, setPacks] = useState<PackInfo[]>([])
-  const [currentPack, setCurrentPack] = useState('pigeon')
+  const [currentPack, setCurrentPack] = useState('dafeiyu')
+  const [importMsg, setImportMsg] = useState('')
   // 顶部实时状态
   const [player, setPlayer] = useState<PlayerLite | null>(null)
 
@@ -96,6 +97,20 @@ export function SettingsApp(): JSX.Element {
     if (id === currentPack) return
     const r = await window.gugu.settings.switchPack(id)
     if (r.ok) setCurrentPack(id)
+  }
+
+  const importPet = async (): Promise<void> => {
+    setImportMsg('选择图片中…')
+    const r = await window.gugu.petImport()
+    if (r.ok && r.id) {
+      setImportMsg(`已导入 ${r.count} 帧`)
+      const list = await window.gugu.packsList()
+      setPacks(list)
+      const sr = await window.gugu.settings.switchPack(r.id)
+      if (sr.ok) setCurrentPack(r.id)
+    } else {
+      setImportMsg(r.error === 'canceled' ? '' : `导入失败：${r.error ?? '未知'}`)
+    }
   }
 
   const statusTitle = player?.playing ? '播放中' : player?.track ? '已暂停' : '待命中'
@@ -226,7 +241,13 @@ export function SettingsApp(): JSX.Element {
           {packs.length === 0 && <span className="panel-hint">先跑 npm run bake</span>}
         </div>
       </div>
-      <div className="panel-sub">点击即刻在桌面上变身</div>
+      <div className="panel-inline">
+        <button className="panel-btn" onClick={() => void importPet()}>
+          ＋ 导入图片自制宠物
+        </button>
+        {importMsg && <span className="panel-hint">{importMsg}</span>}
+      </div>
+      <div className="panel-sub">选择若干图片（白底/透明底均可），即刻变身</div>
 
       <div className="panel-sep" />
 

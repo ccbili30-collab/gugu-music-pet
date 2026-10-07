@@ -3,13 +3,15 @@ import { createPetWindow, getPetWindow, focusPet, setAppQuitting } from './windo
 import { createTray, refreshTray } from './tray'
 import { registerIpc } from './ipc'
 import { registerMusicScheme, handleMusicProtocol } from './music/proxy'
+import { registerPackScheme, handlePackProtocol } from './pack-scheme'
 import { musicService, registerMusicIpc } from './music/service'
 import { startSidecar, stopSidecar } from './music/sidecar'
 import { startClickThrough } from './clickthrough'
 import { registerAgentIpc } from './agent/ipc'
 
-// music:// 协议必须在 app ready 前注册
+// music:// / gugu-pack:// 协议必须在 app ready 前注册
 registerMusicScheme()
+registerPackScheme()
 
 // 单实例：重复启动时唤起已有宠物
 const gotLock = app.requestSingleInstanceLock()
@@ -22,6 +24,7 @@ if (!gotLock) {
     if (process.platform === 'darwin') app.dock?.hide()
 
     handleMusicProtocol()
+    handlePackProtocol()
     void startSidecar()
       .then(() => musicService.init())
       .catch((e) => {

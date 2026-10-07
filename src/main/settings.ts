@@ -3,6 +3,7 @@ import { ipcMain, BrowserWindow } from 'electron'
 import { getCity, setCity } from './weather'
 import { loadConfig, saveConfig } from './store'
 import { refreshTrayMenu } from './tray'
+import { importCustomPack } from './petpack'
 
 export function registerSettingsIpc(): void {
   ipcMain.handle('settings:get', () => ({
@@ -23,7 +24,8 @@ export function registerSettingsIpc(): void {
     return { ok: true }
   })
 
-  ipcMain.handle('pet:pack:get', () => loadConfig().packId || 'pigeon')
+  ipcMain.handle('pet:pack:get', () => loadConfig().packId || 'dafeiyu')
+  ipcMain.handle('pet:import', () => importCustomPack())
 
   ipcMain.handle('pet:pack:set', (_e, id: string) => {
     const cur = loadConfig()

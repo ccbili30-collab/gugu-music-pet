@@ -38,6 +38,8 @@ export interface CharacterPack {
   name: string
   version: string
   type: 'frames' | 'spine'
+  /** false = 照片/贴纸包（linear 采样） */
+  pixel?: boolean
   sprite: { image: string; frameSize: [number, number]; scale: number }
   frames: Record<string, PackFrameInfo>
   slots: Partial<Record<SlotName, PackSlot>>

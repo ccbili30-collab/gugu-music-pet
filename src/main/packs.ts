@@ -8,12 +8,16 @@ export interface PackSummary {
   version: string
 }
 
-/** 扫描可用角色包（dev 与打包后路径不同） */
+/** 扫描可用角色包：内置（dev/打包路径不同）+ 用户导入（userData/characters，gugu-pack:// 加载） */
 export function listPacks(): PackSummary[] {
-  const dir = join(
-    app.getAppPath(),
-    app.isPackaged ? 'out/renderer/characters' : 'src/renderer/public/characters'
+  const builtin = scanDir(
+    join(app.getAppPath(), app.isPackaged ? 'out/renderer/characters' : 'src/renderer/public/characters')
   )
+  const custom = scanDir(join(app.getPath('userData'), 'characters'))
+  return [...builtin, ...custom]
+}
+
+function scanDir(dir: string): PackSummary[] {
   try {
     return readdirSync(dir, { withFileTypes: true })
       .filter((d) => d.isDirectory())

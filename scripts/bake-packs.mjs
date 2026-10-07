@@ -163,7 +163,6 @@ if (first) {
     return encodePng(size, size, img)
   }
   mkdirSync(BUILD, { recursive: true })
-  writeFileSync(join(BUILD, 'trayTemplate.png'), bakeTray(16))
-  writeFileSync(join(BUILD, 'trayTemplate@2x.png'), bakeTray(32))
-  console.log('✓ tray icons')
+  // 托盘图标 build/trayTemplate.png 已固定入库（pigeon 预设移除后不再重新生成）
+  void bakeTray
 }

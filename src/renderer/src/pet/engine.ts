@@ -95,14 +95,15 @@ export class PetEngine {
     this.motionContainer.position.set(0, 0)
     this.app.stage.addChild(this.motionContainer)
 
-    let startPack = 'pigeon'
+    const DEFAULT_PACK = 'dafeiyu'
+    let startPack = DEFAULT_PACK
     try {
-      startPack = (await window.gugu.petPackGet()) || 'pigeon'
+      startPack = (await window.gugu.petPackGet()) || DEFAULT_PACK
       this.loaded = await loadPack(startPack)
       this.currentPackIdVal = startPack
     } catch {
-      this.loaded = await loadPack('pigeon')
-      this.currentPackIdVal = 'pigeon'
+      this.loaded = await loadPack(DEFAULT_PACK)
+      this.currentPackIdVal = DEFAULT_PACK
     }
     this.buildSprite()
     await Particles.preload()
@@ -158,7 +159,7 @@ export class PetEngine {
           bus.emit('bubble', makeBubble({ kind: 'say', text: cmd.text, ttl: 6000 }))
           break
         case 'pack':
-          void this.switchPack((raw as { id?: string }).id ?? 'pigeon')
+          void this.switchPack((raw as { id?: string }).id ?? 'dafeiyu')
           break
         case 'walk':
           this.walkTo()

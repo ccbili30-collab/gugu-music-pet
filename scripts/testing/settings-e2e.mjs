@@ -79,19 +79,19 @@ await sleep(500)
 const vol = await p.ev(`window.__guguAudio.state.volume`)
 check('音量下发到宠物窗 audio', Math.abs(vol - 0.3) < 0.01, `volume=${vol}`)
 
-// 角色包切换（应有 chick；切换后引擎 currentPackId 变化 + 持久化）
+// 角色包：唯一预设 dafeiyu + 自定义包（gugu-pack 协议）热切换
 const packs = await s.ev(`window.gugu.packsList().then(r=>r.map(x=>x.id).join(','))`)
-check('角色包列表', String(packs).includes('chick'), String(packs))
-if (String(packs).includes('chick')) {
-  await s.ev(`window.gugu.settings.switchPack('chick').then(r=>JSON.stringify(r))`)
-  await sleep(1500)
+check('预设角色=大肥鱼', String(packs).includes('dafeiyu'), String(packs))
+if (String(packs).includes('custom-e2e')) {
+  await s.ev(`window.gugu.settings.switchPack('custom-e2e').then(r=>JSON.stringify(r))`)
+  await sleep(1800)
   const enginePack = await p.ev(`window.__guguEngine.currentPackId`)
   const savedPack = await s.ev(`window.gugu.petPackGet()`)
-  check('切换角色包 → 引擎热切换', enginePack === 'chick', `engine=${enginePack}`)
-  check('切换角色包 → 持久化', savedPack === 'chick', `saved=${savedPack}`)
-  // 切回 pigeon
-  await s.ev(`window.gugu.settings.switchPack('pigeon').then(r=>JSON.stringify(r))`)
-  await sleep(1200)
+  check('自定义包热切换(gugu-pack)', enginePack === 'custom-e2e', `engine=${enginePack}`)
+  check('自定义包持久化', savedPack === 'custom-e2e', `saved=${savedPack}`)
+  await s.ev(`window.gugu.settings.switchPack('dafeiyu').then(r=>JSON.stringify(r))`)
+  await sleep(1500)
+  check('切回大肥鱼', await p.ev(`window.__guguEngine.currentPackId`) === 'dafeiyu')
 }
 
 // LLM 配置读写（复用 llm:*）

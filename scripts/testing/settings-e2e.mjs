@@ -1,6 +1,6 @@
 // 设置面板端到端测试：设置窗打开 → 城市保存 → 音量下发 → 角色包切换（真实 app + CDP）
 // 自定义包夹具：复制 dafeiyu 为 userData/characters/custom-e2e（模拟导入产物，测 gugu-pack 协议链路）
-import { mkdirSync, copyFileSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, copyFileSync, readFileSync, writeFileSync, existsSync, unlinkSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 {
@@ -14,9 +14,6 @@ import { join } from 'node:path'
 }
 
 // ⚠️ 测试隔离：快照并最终恢复用户 config.json（LLM key 不被 mock 覆盖）
-import { readFileSync, writeFileSync, existsSync, copyFileSync, unlinkSync } from 'node:fs'
-import { homedir } from 'node:os'
-import { join } from 'node:path'
 const CFG = join(homedir(), 'Library/Application Support/Gugu Music Pet/config.json')
 const BAK = '/tmp/gugu-config-bak.json'
 const hadCfg = existsSync(CFG)

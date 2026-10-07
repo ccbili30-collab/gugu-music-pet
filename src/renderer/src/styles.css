@@ -509,33 +509,26 @@ body {
 /* ---------- 迷你播放器（宠物头顶导航键） ---------- */
 .mini-player {
   position: absolute;
-  left: -140px;
+  left: -104px;
   top: 12px;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 4px 14px 5px 6px;
-  box-shadow: var(--shadow-soft);
-  backdrop-filter: var(--blur-glass);
-  -webkit-backdrop-filter: var(--blur-glass);
-  animation: bubble-in 0.25s ease-out;
-  max-width: 300px;
-}
-
-.mp-mid {
+  width: 208px;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 2px;
-  min-width: 0;
-  flex: 1;
-  margin-left: 5px;
+  background: rgba(255, 252, 246, 0.3);
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 5px 10px 7px;
+  box-shadow: 0 6px 22px rgba(120, 90, 60, 0.12);
+  backdrop-filter: blur(22px) saturate(1.5);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  animation: bubble-in 0.25s ease-out;
 }
 
 .mp-name {
-  font-size: 11px;
+  max-width: 100%;
+  font-size: 10.5px;
   font-weight: 600;
   color: var(--ink);
   white-space: nowrap;
@@ -543,30 +536,22 @@ body {
   text-overflow: ellipsis;
 }
 
-.mp-progress {
-  height: 2px;
-  border-radius: 1px;
-  background: rgba(58, 58, 68, 0.14);
-  overflow: hidden;
+.mp-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }
-
-.mp-progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--accent), #ffb38a);
-  transition: width 0.8s linear;
-}
-
 
 .mp-btn {
   border: none;
   background: transparent;
   color: var(--ink);
-  font-size: 12px;
+  font-size: 11px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   cursor: pointer;
   padding: 0;
@@ -574,7 +559,7 @@ body {
 }
 
 .mp-btn:hover {
-  background: rgba(58, 58, 68, 0.08);
+  background: rgba(58, 58, 68, 0.1);
 }
 
 .mp-btn:active {
@@ -584,7 +569,7 @@ body {
 .mp-main {
   background: var(--accent);
   color: #fff;
-  font-size: 11px;
+  font-size: 10px;
   margin: 0 1px;
 }
 
@@ -592,59 +577,44 @@ body {
   background: var(--accent-deep);
 }
 
-.mp-btn:hover {
-  background: rgba(255, 255, 255, 0.14);
-}
-
-.mp-main {
-  background: #6a5ae0;
-  font-size: 13px;
-}
-
-.mp-main:hover {
-  background: #7d6ff0;
-}
-
-.mp-mic img {
-  width: 13px;
-  height: 13px;
-  image-rendering: pixelated;
-  filter: brightness(0) invert(0.28); /* 像素话筒染墨色，奶油底可读 */
+.mp-mic {
+  color: var(--ink-2);
 }
 
 .mp-mic-on {
-  background: var(--accent) !important;
+  background: var(--accent);
+  color: #fff;
 }
 
-.mp-mic-on img {
-  filter: none;
+.mp-progress {
+  position: relative;
+  align-self: stretch;
+  height: 14px;
+  cursor: pointer;
+  touch-action: none;
 }
 
-.mp-title {
-  display: flex;
-  flex-direction: column;
-  margin-left: 4px;
-  min-width: 0;
-  overflow: hidden;
+.mp-progress::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(58, 58, 68, 0.16);
 }
 
-.mp-name {
-  color: #f5f5f7;
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 130px;
-}
-
-.mp-artist {
-  color: #a8a8b3;
-  font-size: 10px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 130px;
+.mp-progress-fill {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent), #ffb38a);
+  transition: width 0.3s linear;
 }
 
 /* ---------- 登录窗 ---------- */
@@ -1155,22 +1125,24 @@ body {
   flex-direction: column;
   gap: 7px;
   padding: 12px 14px;
-  background: rgba(255, 252, 246, 0.88);
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: transparent; /* 透明：靠窗口 vibrancy 毛玻璃 */
+  border: none;
   border-radius: 14px;
   overflow-y: auto;
   font-size: 12px;
-  color: #2c2c33;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  color: var(--ink);
 }
 
 .panel-status {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(255, 122, 89, 0.12);
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid var(--line);
   border-radius: 10px;
   padding: 10px 12px;
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
 }
 
 .panel-status-icon {
@@ -1234,12 +1206,13 @@ body {
 }
 
 .panel-input {
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--line);
   border-radius: 8px;
   padding: 6px 9px;
   font-size: 12px;
   outline: none;
-  background: rgba(255, 255, 255, 0.75);
+  background: transparent;
+  color: var(--ink);
   width: 100%;
 }
 
@@ -1311,19 +1284,19 @@ body {
 }
 
 .panel-chip {
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(58, 58, 68, 0.28);
+  background: transparent;
   border-radius: 999px;
   font-size: 12px;
   padding: 4px 12px;
   cursor: pointer;
-  color: #2c2c33;
+  color: var(--ink);
 }
 
 .panel-chip-active {
-  background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--accent-deep);
+  font-weight: 600;
 }
 
 .panel-link {

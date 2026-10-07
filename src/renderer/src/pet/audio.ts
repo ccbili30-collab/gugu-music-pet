@@ -70,6 +70,9 @@ export class AudioEngine {
   setMuted(muted: boolean): void {
     this.muted = muted
     if (this.analyser) {
+      // 图已建：静音只由 analyser 连接控制；el.muted 必须为 false——
+      // MediaElementSource 对 muted 元素输出的是静音，分析器（BPM/频谱）会全零
+      this.el.muted = false
       try {
         this.analyser.disconnect()
         if (!muted) this.analyser.connect(this.actx?.destination as AudioNode)
@@ -100,6 +103,8 @@ export class AudioEngine {
       this.analyser.smoothingTimeConstant = 0.5
       src.connect(this.analyser)
       this.analyser.connect(this.actx.destination)
+      // 建图后静音一律走 analyser 断连；el.muted 复位（否则分析器拿静音）
+      this.el.muted = false
       if (this.muted) {
         // 建图时已处于静音模式（自动化测试）
         try {

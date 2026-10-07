@@ -59,6 +59,8 @@ export class PetEngine {
   private lastSent = { x: -9999, y: -9999 }
   private offCommand: (() => void) | null = null
   private scaleFactor = Number(localStorage.getItem('gugu-scale') || '1') || 1
+  /** 频谱形变（平滑后的低音/高音能量，0~1）：高音纵向拉伸、低音横向压扁 */
+  private spectral = { bass: 0, treble: 0 }
   private hoverRequested = false
   private offScreenChanged: (() => void) | null = null
   private lastSaved = { x: -9999, y: -9999 }
@@ -245,6 +247,24 @@ export class PetEngine {
   setAudioSource(src: AudioSource): void {
     this.audioSource = src
     this.beat.onBeat = (strength) => this.motion.beatKick(strength)
+  }
+
+  /** 频谱 → 低音/高音能量（快攻慢放）。低音横压扁、高音纵拉伸。 */
+  private updateSpectral(dt: number): void {
+    const f = this.freqData
+    if (!f) return
+    const avg = (from: number, to: number): number => {
+      let sum = 0
+      const hi = Math.min(to, f.length)
+      for (let i = from; i < hi; i++) sum += f[i]
+      return sum / Math.max(1, hi - from) / 255
+    }
+    const bassRaw = Math.min(1, avg(1, 9) * 1.15) // ~40-380Hz 鼓/贝斯
+    const trebleRaw = Math.min(1, avg(56, 200) * 2.2) // ~2.4-8.6kHz 人声亮部/镲
+    const attack = Math.min(1, dt * 14)
+    const release = Math.min(1, dt * 3.2)
+    this.spectral.bass += (bassRaw - this.spectral.bass) * (bassRaw > this.spectral.bass ? attack : release)
+    this.spectral.treble += (trebleRaw - this.spectral.treble) * (trebleRaw > this.spectral.treble ? attack : release)
   }
 
   private async setupBounds(clampPos = true): Promise<void> {
@@ -455,19 +475,11 @@ export class PetEngine {
           this.onPetDblClick?.()
           window.gugu.emitEvent('dblclick')
         } else {
-          // 连击手感：单击立刻弹（地面小跳/悬浮冲量 + 挤压 + 爱心，连点连跳）
+          // 连击手感：原地压缩 + 爱心（不位移，点了乱跑不好点）
           this.lastClickAt = now
           if (!this.sleeping) {
             this.motion.kickSquash(1.0)
             this.particles.hearts(this.petLocal.x + (Math.random() - 0.5) * 30, this.petLocal.y - 70, 2)
-            if (this.physics.mode === 'ground') {
-              this.physics.vy = -340 - Math.random() * 160
-              this.physics.vx += (Math.random() - 0.5) * 240
-              this.physics.mode = 'ballistic'
-            } else if (this.physics.hovering) {
-              this.physics.vy = -420 - Math.random() * 140
-              this.physics.vx += (Math.random() - 0.5) * 220
-            }
           }
           window.gugu.emitEvent('click')
         }
@@ -565,6 +577,7 @@ export class PetEngine {
         }
         an.getByteFrequencyData(this.freqData as Uint8Array<ArrayBuffer>)
         this.beat.update(dt, this.freqData as Uint8Array<ArrayBuffer>, now / 1000)
+        this.updateSpectral(dt)
         const musicEnergy = Math.max(0, Math.min(1, (this.beat.energy - 0.02) * 3))
         const level = Math.min(1, musicEnergy + mic * 1.3)
         if (level > 0.05) {
@@ -663,9 +676,12 @@ export class PetEngine {
     const info = this.loaded.frameInfo.get(frameName)
     const [, fh] = this.loaded.frameSize
     if (info) this.sprite.anchor.set(0.5, (info.groundRow + 1) / fh)
+    // 频谱形变：高音把 pet 拉得特别长，低音横向压扁（与点击挤压、律动层叠加）
+    const stretchX = 1 + this.spectral.bass * 0.45
+    const stretchY = 1 + this.spectral.treble * 0.85
     this.sprite.scale.set(
-      (this.animator.isFlipped ? -1 : 1) * this.loaded.scale * this.scaleFactor,
-      this.loaded.scale * this.scaleFactor
+      (this.animator.isFlipped ? -1 : 1) * this.loaded.scale * this.scaleFactor * stretchX,
+      this.loaded.scale * this.scaleFactor * stretchY
     )
 
     // ---- 变换律动层 ----

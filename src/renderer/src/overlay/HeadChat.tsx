@@ -94,7 +94,7 @@ function HeadChat({ onPhaseChange }, ref): JSX.Element {
       setBarFading(false)
       setThinking(false)
       thinkingRef.current = false
-      engagedRef.current = false
+      engagedRef.current = true // 双击是明确意图：不参与"未输入移开回收"
       lastActivityRef.current = Date.now()
       setPhaseBoth('open')
       localStorage.setItem('gugu-hc-onboarded', '1')
@@ -115,7 +115,8 @@ function HeadChat({ onPhaseChange }, ref): JSX.Element {
         }
       } else if (phaseRef.current === 'open' && !engagedRef.current) {
         later(() => {
-          if (!hoverRef.current && phaseRef.current === 'open' && !engagedRef.current) cascadeClose(true)
+          const focused = document.activeElement?.classList.contains('hc-input')
+          if (!hoverRef.current && !focused && phaseRef.current === 'open' && !engagedRef.current) cascadeClose(true)
         }, DWELL_OUT_MS)
       }
     }
@@ -216,7 +217,8 @@ function HeadChat({ onPhaseChange }, ref): JSX.Element {
                 onKeyDown={(e) => {
                   engagedRef.current = true
                   lastActivityRef.current = Date.now()
-                  if (e.key === 'Enter') send()
+                  // 中文输入法选词的 Enter 不当发送
+                  if (e.key === 'Enter' && !e.nativeEvent.isComposing) send()
                 }}
               />
               <button className="hc-send" onClick={send} disabled={thinking || !input.trim()}>

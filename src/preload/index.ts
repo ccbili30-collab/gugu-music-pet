@@ -123,6 +123,8 @@ export interface GuguApi {
   petPackGet(): Promise<string>
   petPackSet(id: string): Promise<{ ok: boolean }>
   petImport(): Promise<{ ok: boolean; id?: string; count?: number; error?: string }>
+  petScale(v: number): Promise<{ ok: boolean }>
+  petAutonomyDemo(): Promise<{ ok: boolean }>
 }
 
 const api: GuguApi = {
@@ -220,7 +222,9 @@ const api: GuguApi = {
   },
   petPackGet: () => ipcRenderer.invoke('pet:pack:get'),
   petPackSet: (id) => ipcRenderer.invoke('pet:pack:set', id),
-  petImport: () => ipcRenderer.invoke('pet:import')
+  petImport: () => ipcRenderer.invoke('pet:import'),
+  petScale: (v) => ipcRenderer.invoke('pet:scale', v),
+  petAutonomyDemo: () => ipcRenderer.invoke('pet:autonomy-demo')
 }
 
 contextBridge.exposeInMainWorld('gugu', api)

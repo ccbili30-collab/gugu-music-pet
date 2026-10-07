@@ -213,6 +213,7 @@ export async function importCustomPack(): Promise<ImportResult> {
 
   const frames: Record<string, { index: number; groundRow: number }> = {}
   const frameNames: string[] = []
+  void 0
   cells.forEach((_, i) => {
     const name = `idle_${i}`
     frames[name] = { index: i, groundRow: CELL - 9 }
@@ -227,7 +228,7 @@ export async function importCustomPack(): Promise<ImportResult> {
     pixel: false,
     sprite: { image: 'sheet.png', frameSize: [CELL, CELL], scale: 104 / CELL },
     frames,
-    slots: { idle: { frames: frameNames, fps: 0.7, loop: true } },
+    slots: { idle: { frames: frameNames.slice(0, 1), fps: 1, loop: true } }, // 单帧静止
     fallbacks: {}
   }
 

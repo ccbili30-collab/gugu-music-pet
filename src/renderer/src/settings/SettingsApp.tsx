@@ -34,10 +34,13 @@ export function SettingsApp(): JSX.Element {
   const [citySaved, setCitySaved] = useState('')
   // 音量
   const [volume, setVolume] = useState(0.8)
+  // pet 缩放
+  const [petScale, setPetScale] = useState(1)
   // 角色包
   const [packs, setPacks] = useState<PackInfo[]>([])
   const [currentPack, setCurrentPack] = useState('dafeiyu')
   const [importMsg, setImportMsg] = useState('')
+  const [demoMsg, setDemoMsg] = useState('')
   // 顶部实时状态
   const [player, setPlayer] = useState<PlayerLite | null>(null)
 
@@ -52,6 +55,8 @@ export function SettingsApp(): JSX.Element {
     })
     void window.gugu.packsList().then(setPacks)
     void window.gugu.petPackGet().then(setCurrentPack)
+    const saved = Number(localStorage.getItem('gugu-scale') || '1')
+    if (saved > 0) setPetScale(saved)
     const off = window.gugu.onMusicState(({ player: p }) => {
       setPlayer({ track: p.track, playing: p.playing, volume: p.volume })
     })
@@ -249,6 +254,41 @@ export function SettingsApp(): JSX.Element {
         {importMsg && <span className="panel-hint">{importMsg}</span>}
       </div>
       <div className="panel-sub">选择若干图片（白底/透明底均可），即刻变身</div>
+
+      <div className="panel-row">
+        <span className="panel-label">🔍 pet 大小</span>
+        <div className="panel-inline panel-inline-right">
+          <input
+            type="range"
+            min={0.5}
+            max={2}
+            step={0.1}
+            value={petScale}
+            onChange={(e) => {
+              const v = Number(e.target.value)
+              setPetScale(v)
+              void window.gugu.petScale(v)
+            }}
+            className="panel-range"
+          />
+          <span className="panel-volume-num">{Math.round(petScale * 100)}%</span>
+        </div>
+      </div>
+
+      <div className="panel-sep" />
+
+      <button
+        className="panel-link"
+        onClick={() => {
+          setDemoMsg('表演开始…')
+          void window.gugu.petAutonomyDemo().then(() => setDemoMsg(''))
+          window.setTimeout(() => setDemoMsg(''), 4000)
+        }}
+      >
+        <span>🎭 自主行为演示（随机心情选歌单听歌哼歌）</span>
+        <span className="panel-link-arrow">›</span>
+      </button>
+      {demoMsg && <div className="panel-hint">{demoMsg}</div>}
 
       <div className="panel-sep" />
 

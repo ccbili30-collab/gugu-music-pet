@@ -176,6 +176,9 @@ export class PetEngine {
         case 'scale-down':
           this.changeScale(1 / 1.15)
           break
+        case 'scale':
+          if (typeof (raw as { value?: number }).value === 'number') this.setScale((raw as { value: number }).value)
+          break
         case 'hotcomments':
           bus.emit('hotComments', undefined)
           break
@@ -494,7 +497,17 @@ export class PetEngine {
 
   // ---- 公共指令（右键菜单 / 大脑 M4） ----
 
-  /** 缩放桌宠（0.5~2.0），localStorage 持久化 */
+  /** 精确设置缩放（设置面板滑条） */
+  setScale(v: number): void {
+    this.scaleFactor = Math.min(2, Math.max(0.5, Number(v.toFixed(2))))
+    localStorage.setItem('gugu-scale', String(this.scaleFactor))
+  }
+
+  get scale(): number {
+    return this.scaleFactor
+  }
+
+  /** 缩放桌宠（0.5~2.0 倍率，托盘用），localStorage 持久化 */
   changeScale(mult: number): void {
     this.scaleFactor = Math.min(2, Math.max(0.5, Number((this.scaleFactor * mult).toFixed(2))))
     localStorage.setItem('gugu-scale', String(this.scaleFactor))

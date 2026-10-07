@@ -144,7 +144,7 @@ function scaleRgba(src, srcW, srcH, dstW, dstH) {
 
 // ---- 槽位映射（dafeiyu 表情 → 动作语义）----
 const SLOT_MAP = {
-  idle: ['happy/ok', 'see/zhenjing'],
+  idle: ['happy/ok'], // 单帧静止：待机切图在贴纸包上像闪图，已移除
   stand: ['see/zhenjing'],
   walk_right: ['daily/ganfan'],
   walk_left: { mirrorOf: 'walk_right' },

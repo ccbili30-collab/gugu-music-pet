@@ -48,13 +48,13 @@ export class Motion {
     let rotation = 0
     let offsetY = 0
 
-    // 呼吸（睡眠时更慢更深）
+    // 待机微压缩拉伸（呼吸）：纵缩横胀体积守恒，睡眠更慢更深
     if (!airborne && speed < 40) {
-      const period = ctx.sleeping ? 5.2 : 3.4
-      const amp = ctx.sleeping ? 0.03 : 0.02
+      const period = ctx.sleeping ? 5.2 : 3.2
+      const amp = ctx.sleeping ? 0.035 : 0.032
       const br = Math.sin((this.t / period) * Math.PI * 2)
       scaleY *= 1 + amp * br
-      scaleX *= 1 - amp * 0.7 * br
+      scaleX *= 1 / (1 + amp * br) // 体积守恒：压扁时变宽、拉长时变窄
     }
 
     // 空中：沿速度方向的拉伸 + 侧倾

@@ -151,6 +151,33 @@ class SceneEngine {
     }
   }
 
+  /** 自主行为演示：随机心情 → 选歌单 → 听歌 → 哼歌/跳舞（设置面板测试按钮） */
+  async autonomyDemo(): Promise<void> {
+    const moods: Array<{ name: string; kw: string; act: 'hum' | 'dance'; line: string }> = [
+      { name: '元气满满', kw: '欢快 热门', act: 'dance', line: '今天元气满满，挑了几首带感的♪' },
+      { name: '有点emo', kw: '伤感 深夜', act: 'hum', line: '有点emo…我自己听会儿歌' },
+      { name: '慵懒午后', kw: '轻音乐 慵懒', act: 'hum', line: '慵懒的下午，来点轻音乐吧' },
+      { name: '想嗨一下', kw: '劲爆 摇滚', act: 'dance', line: '想嗨一下！这些歌我存好久了' },
+      { name: '回忆杀', kw: '经典 老歌', act: 'hum', line: '忽然想听几首老歌…' }
+    ]
+    const mood = moods[Math.floor(Math.random() * moods.length)]
+    this.bubble('say', `${mood.line}（心情：${mood.name}）`)
+    let queue: Awaited<ReturnType<typeof musicService.api.search>> = []
+    try {
+      queue = await musicService.api.search(mood.kw, 10)
+    } catch {
+      /* 网络失败仍表演动作 */
+    }
+    if (queue.length) {
+      // 非 VIP 优先，避免连跳
+      const free = queue.filter((t) => !t.vip)
+      const list = free.length >= 3 ? free : queue
+      musicService.playInRenderer(list, 0)
+    }
+    sendToPet('pet:command', { action: mood.act })
+    if (mood.act === 'hum') sendToPet('pet:command', { action: 'say', text: '♪～♪～' })
+  }
+
   private async enterEmo(reason: string, autoplay = true): Promise<void> {
     this.mode = 'emo'
     this.emoStartedAt = Date.now()

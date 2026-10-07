@@ -24,6 +24,18 @@ export function registerSettingsIpc(): void {
     return { ok: true }
   })
 
+  ipcMain.handle('pet:scale:get', () => loadConfig())
+  ipcMain.handle('pet:scale', (_e, v: unknown) => {
+    const val = Math.min(2, Math.max(0.5, Number(v) || 1))
+    for (const win of BrowserWindow.getAllWindows()) {
+      if (win.getTitle() === 'Gugu Pet') win.webContents.send('pet:command', { action: 'scale', value: val })
+    }
+    return { ok: true }
+  })
+  ipcMain.handle('pet:autonomy-demo', () => {
+    void import('./agent/scenes').then(({ sceneEngine }) => sceneEngine.autonomyDemo())
+    return { ok: true }
+  })
   ipcMain.handle('pet:pack:get', () => loadConfig().packId || 'dafeiyu')
   ipcMain.handle('pet:import', () => importCustomPack())
 

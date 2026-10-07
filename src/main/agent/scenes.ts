@@ -36,6 +36,7 @@ class SceneEngine {
     void this.refreshWeather()
     this.weatherTimer = setInterval(() => void this.refreshWeather(), 30 * 60 * 1000)
     this.timer = setInterval(() => this.tick(), 15_000)
+    setInterval(() => this.murmurTick(), 4000) // 碎碎念巡检（引擎与 app 同生命周期）
   }
 
   private async refreshWeather(): Promise<void> {
@@ -149,6 +150,76 @@ class SceneEngine {
         void this.enterEmo(lateNight ? '深夜' : '雨夜', !lateNight)
       }
     }
+  }
+
+  // ---- 碎碎念：听歌期间 16-34s 一条（歌词哼唱/内置吐槽/LLM 一句话） ----
+  private lastMurmurAt = 0
+  private lyricCache = new Map<string, string[]>()
+
+  private murmurTick(): void {
+    if (this.mode === 'emo') return // emo 有自己的哼歌/共鸣节奏
+    void this.maybeMurmur()
+  }
+
+  private async maybeMurmur(): Promise<void> {
+    const player = musicService.api.currentState()
+    if (!player.playing || !player.track) return
+    const gap = 16_000 + Math.random() * 18_000
+    if (Date.now() - this.lastMurmurAt < gap) return
+    this.lastMurmurAt = Date.now()
+    const track = player.track
+    const roll = Math.random()
+
+    // 45%: 哼当前歌的歌词碎片
+    if (roll < 0.45) {
+      let lines = this.lyricCache.get(track.id)
+      if (!lines) {
+        try {
+          const l = await musicService.api.lyric(track.id)
+          lines = l.map((x) => x.text).filter((t) => t.length >= 4 && t.length <= 18)
+          this.lyricCache.set(track.id, lines)
+        } catch {
+          lines = []
+        }
+      }
+      if (lines?.length) {
+        this.bubble('hum', `♪ ${lines[Math.floor(Math.random() * lines.length)]}`)
+        return
+      }
+    }
+
+    const pool = [
+      `《${track.name}》也太对味了`,
+      `${track.artists}这嗓音绝了`,
+      '副歌部分我跟上了♪',
+      '抖腿停不下来',
+      '再循环一遍吧',
+      '这歌单我挑的，眼光不错吧',
+      '耳机里的世界真安静啊',
+      '这前奏一响就起鸡皮疙瘩',
+      '咳咳……刚才那句没唱破吧',
+      '偷偷调大了一格音量'
+    ]
+    // 35%: LLM 碎碎念一句话（失败走池子）
+    if (roll >= 0.65 && llmReady(loadConfig().llm)) {
+      try {
+        const res = await chatCompletion(
+          loadConfig().llm,
+          [
+            { role: 'system', content: `你是桌宠${loadConfig().personaName}，正在听《${track.name}》(${track.artists})。用不超过12个字碎碎念一句听歌感受，口语化，不要引号不要解释。` }
+          ],
+          undefined,
+          { maxTokens: 40, temperature: 1.0 }
+        )
+        if (res.ok && res.content.trim()) {
+          this.bubble('comment', res.content.trim().slice(0, 16))
+          return
+        }
+      } catch {
+        /* 走池子 */
+      }
+    }
+    this.bubble('say', pool[Math.floor(Math.random() * pool.length)])
   }
 
   /** 自主行为演示：随机心情 → 选歌单 → 听歌 → 哼歌/跳舞（设置面板测试按钮） */

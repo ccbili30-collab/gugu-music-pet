@@ -33,7 +33,7 @@ const DEFAULT_CONFIG: AppConfig = {
     model: '',
     temperature: 0.8
   },
-  personaName: 'pet',
+  personaName: '大肥鱼',
   packId: ''
 }
 
@@ -47,6 +47,8 @@ export function loadConfig(): AppConfig {
       llmKeyEnc?: string
     } & Partial<AppConfig>
     const cfg: AppConfig = { ...DEFAULT_CONFIG, ...raw, llm: { ...DEFAULT_CONFIG.llm, ...raw.llm } }
+    // 历史默认名迁移到当前默认（用户没自定义过名字的跟着新默认走）
+    if (cfg.personaName === '咕咕' || cfg.personaName === 'pet') cfg.personaName = DEFAULT_CONFIG.personaName
     // apiKey 加密存储优先；兼容旧明文
     if (raw.llmKeyEnc) {
       try {

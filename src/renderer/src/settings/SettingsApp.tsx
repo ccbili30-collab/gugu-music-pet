@@ -26,7 +26,7 @@ interface PlayerLite {
  */
 export function SettingsApp(): JSX.Element {
   // LLM
-  const [cfg, setCfg] = useState({ baseUrl: '', apiKey: '', model: '', personaName: 'pet' })
+  const [cfg, setCfg] = useState({ baseUrl: '', apiKey: '', model: '', personaName: '大肥鱼' })
   const [llmSaved, setLlmSaved] = useState('')
   const [testResult, setTestResult] = useState('')
   // 天气

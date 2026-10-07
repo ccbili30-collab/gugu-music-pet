@@ -21,7 +21,7 @@ export function ChatApp(): JSX.Element {
   const [input, setInput] = useState('')
   const [thinking, setThinking] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
-  const [cfg, setCfg] = useState({ baseUrl: '', apiKey: '', model: '', personaName: 'pet' })
+  const [cfg, setCfg] = useState({ baseUrl: '', apiKey: '', model: '', personaName: '大肥鱼' })
   const [testResult, setTestResult] = useState<string>('')
   const [configured, setConfigured] = useState(true)
   const bodyRef = useRef<HTMLDivElement>(null)
@@ -67,7 +67,7 @@ export function ChatApp(): JSX.Element {
   return (
     <div className="chat-app">
       <div className="chat-header">
-        <span>🕊️ {cfg.personaName || 'pet'} · 音乐伙伴</span>
+        <span>🕊️ {cfg.personaName || '大肥鱼'} · 音乐伙伴</span>
         <button className="chat-gear" title="大脑设置" onClick={() => setShowSettings((v) => !v)}>
           ⚙️
         </button>
@@ -187,7 +187,7 @@ export function ChatApp(): JSX.Element {
       <div className="chat-input-bar">
         <input
           className="chat-input"
-          placeholder={`跟 ${cfg.personaName || 'pet'} 说点什么…`}
+          placeholder={`跟 ${cfg.personaName || '大肥鱼'} 说点什么…`}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {

@@ -705,7 +705,8 @@ export class PetEngine {
       vx: ph.vx,
       vy: ph.vy,
       walking: !!this.walking,
-      sleeping: this.sleeping
+      sleeping: this.sleeping,
+      listening: !!(src && src.playing())
     })
     // 8 拍编舞层：地面且有舞能时接管节拍运动（帧在动作边界锁定）
     let dance: DanceTransform | null = null

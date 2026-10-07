@@ -6,6 +6,8 @@ export interface MotionContext {
   vy: number
   walking: boolean
   sleeping: boolean
+  /** 音乐播放中（安静段也保持慢摇微变形） */
+  listening: boolean
 }
 
 export interface MotionOutput {
@@ -63,6 +65,14 @@ export class Motion {
       scaleY *= stretch
       scaleX /= Math.sqrt(stretch)
       rotation += Math.max(-1, Math.min(1, ctx.vx / 1500)) * 0.38
+    }
+
+    // 听歌摇摆：安静段也慢慢晃 + 微形变（编舞层在其上叠加节拍动作）
+    if (ctx.listening && !airborne && !ctx.sleeping) {
+      rotation += Math.sin(this.t * 1.4) * 0.05
+      const w = Math.sin(this.t * 2.8)
+      scaleX *= 1 + w * 0.014
+      scaleY *= 1 - w * 0.012
     }
 
     // 走路小颠簸 + 轻微摇摆

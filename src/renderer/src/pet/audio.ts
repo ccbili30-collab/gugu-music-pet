@@ -146,7 +146,7 @@ export class AudioEngine {
     if (!r.url) {
       // 连续跳歌时不刷屏：8 秒内只提示一次
       if (Date.now() - this.lastSkipToastAt > 8000) {
-        this.onError?.(`《${track.name}》暂时放不了，咕咕帮你跳下一首…`)
+        this.onError?.(`《${track.name}》暂时放不了，pet 帮你跳下一首…`)
         this.lastSkipToastAt = Date.now()
       }
       window.setTimeout(() => {

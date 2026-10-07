@@ -12,6 +12,20 @@ import { join } from 'node:path'
   pk.name = '自定义测试鱼'
   writeFileSync(join(ud, 'pack.json'), JSON.stringify(pk))
 }
+
+// ⚠️ 测试隔离：快照并最终恢复用户 config.json（LLM key 不被 mock 覆盖）
+import { readFileSync, writeFileSync, existsSync, copyFileSync, unlinkSync } from 'node:fs'
+import { homedir } from 'node:os'
+import { join } from 'node:path'
+const CFG = join(homedir(), 'Library/Application Support/Gugu Music Pet/config.json')
+const BAK = '/tmp/gugu-config-bak.json'
+const hadCfg = existsSync(CFG)
+if (hadCfg) copyFileSync(CFG, BAK)
+process.on('exit', () => {
+  if (hadCfg) copyFileSync(BAK, CFG)
+  else if (existsSync(CFG)) unlinkSync(CFG)
+})
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 const list = async () => (await (await fetch('http://127.0.0.1:9222/json/list')).json()).filter((t) => t.type === 'page')

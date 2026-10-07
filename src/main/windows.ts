@@ -109,7 +109,7 @@ export function createChatWindow(): BrowserWindow {
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 12, y: 12 },
     backgroundColor: '#00000000',
-    title: '咕咕 · 聊天',
+    title: 'pet · 聊天',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -186,7 +186,7 @@ export function createSettingsPanel(): BrowserWindow {
     fullscreenable: false,
     skipTaskbar: true,
     hasShadow: true,
-    title: '咕咕 · 设置',
+    title: 'pet · 设置',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,

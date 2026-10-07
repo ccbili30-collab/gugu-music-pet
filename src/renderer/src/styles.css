@@ -155,13 +155,10 @@ body {
 .hc-input-bar {
   display: flex;
   gap: 5px;
-  background: var(--paper-strong);
-  border: 1.5px solid var(--accent);
-  border-radius: 14px;
-  padding: 5px 5px 5px 12px;
-  backdrop-filter: var(--blur-glass);
-  -webkit-backdrop-filter: var(--blur-glass);
-  box-shadow: var(--shadow-soft);
+  background: transparent;
+  border: 1px solid rgba(58, 58, 68, 0.28);
+  border-radius: 10px;
+  padding: 4px 4px 4px 10px;
 }
 
 .hc-input {
@@ -179,11 +176,15 @@ body {
   color: var(--ink-2);
 }
 
+.hc-input-bar:focus-within {
+  border-color: rgba(58, 58, 68, 0.55);
+}
+
 .hc-send {
-  border: none;
-  border-radius: 9px;
-  background: var(--accent);
-  color: #fff;
+  border: 1px solid rgba(58, 58, 68, 0.28);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
   font-size: 13px;
   width: 26px;
   height: 26px;
@@ -192,7 +193,7 @@ body {
 }
 
 .hc-send:hover {
-  background: var(--accent-deep);
+  border-color: rgba(58, 58, 68, 0.55);
 }
 
 .hc-send:disabled {

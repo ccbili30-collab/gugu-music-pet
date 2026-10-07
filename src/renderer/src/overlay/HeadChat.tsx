@@ -205,7 +205,7 @@ function HeadChat({ onPhaseChange }, ref): JSX.Element {
               <input
                 ref={inputRef}
                 className="hc-input"
-                placeholder="Talk to Gugu…"
+                placeholder="说点什么…"
                 value={input}
                 maxLength={120}
                 onChange={(e) => {

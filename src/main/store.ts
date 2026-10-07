@@ -33,7 +33,7 @@ const DEFAULT_CONFIG: AppConfig = {
     model: '',
     temperature: 0.8
   },
-  personaName: '咕咕',
+  personaName: 'pet',
   packId: ''
 }
 

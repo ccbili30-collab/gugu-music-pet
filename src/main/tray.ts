@@ -19,7 +19,7 @@ export function createTray(): Tray {
   const icon = nativeImage.createFromPath(join(app.getAppPath(), 'build', 'trayTemplate.png'))
   icon.setTemplateImage(true)
   tray = new Tray(icon)
-  tray.setToolTip('咕咕音乐桌宠')
+  tray.setToolTip('pet 音乐桌宠')
   rebuildMenu(null, null)
   // 左键：托盘弹出设置面板；右键：完整功能菜单
   tray.on('click', () => toggleSettingsPanel())
@@ -124,7 +124,7 @@ function rebuildMenu(player: PlayerState | null, login: LoginState | null): void
   }
 
   template.push(
-    { label: '显示咕咕', click: () => getPetWindow()?.show() },
+    { label: '显示 pet', click: () => getPetWindow()?.show() },
     { label: '设置…', click: () => showSettingsPanel() },
     { type: 'separator' }
   )

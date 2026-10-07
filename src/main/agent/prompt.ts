@@ -52,7 +52,7 @@ export function memoryExtractPrompt(turn: { user: string; assistant: string }, i
   return {
     system:
       'You are a memory manager for a desktop pet AI. Read a conversation turn and decide whether to store a new long-term memory about the OWNER (not the pet). Reply one compact JSON only: {"store": true, "type": "identity|preferences|episodes|behavior", "title": "<短标题>", "summary": "<一句话，第三人称，中文>"} or {"store": false}. Do NOT duplicate what the index already has.',
-    user: `## 现有记忆索引\n${index || '（空）'}\n\n## 本轮对话\n主人：${turn.user}\n${'咕咕'}：${turn.assistant}\n\n是否要存新记忆？`
+    user: `## 现有记忆索引\n${index || '（空）'}\n\n## 本轮对话\n主人：${turn.user}\n${'pet'}：${turn.assistant}\n\n是否要存新记忆？`
   }
 }
 

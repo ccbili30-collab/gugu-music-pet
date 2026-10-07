@@ -446,14 +446,26 @@ export class PetEngine {
 
       if (!this.pointerMoved && now - downAt < 400) {
         const w = this.worldPointer(e)
+        // 连击手感：每次点击都立刻弹一下（地面时小跳 + 挤压 + 爱心，连点连跳）
+        if (!this.sleeping) {
+          this.motion.kickSquash(1.0)
+          this.particles.hearts(this.petLocal.x + (Math.random() - 0.5) * 30, this.petLocal.y - 70, 2)
+          if (this.physics.mode === 'ground') {
+            this.physics.vy = -340 - Math.random() * 160
+            this.physics.vx += (Math.random() - 0.5) * 240
+            this.physics.mode = 'ballistic'
+          } else if (this.physics.hovering) {
+            // 悬浮态点击也弹（阻尼悬停下的冲量跳动）
+            this.physics.vy = -420 - Math.random() * 140
+            this.physics.vx += (Math.random() - 0.5) * 220
+          }
+        }
         if (now - this.lastClickAt < 360 && Math.hypot(w.x - this.pointerDownPos.x, w.y - this.pointerDownPos.y) < 16) {
           this.lastClickAt = 0
           this.onPetDblClick?.()
           window.gugu.emitEvent('dblclick')
         } else {
           this.lastClickAt = now
-          this.motion.kickSquash(0.85)
-          if (!this.sleeping) this.particles.hearts(this.petLocal.x, this.petLocal.y - 60, 2)
           window.gugu.emitEvent('click')
         }
       }

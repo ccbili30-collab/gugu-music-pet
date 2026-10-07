@@ -125,7 +125,7 @@ export class Brain {
   async chat(userText: string): Promise<void> {
     const cfg: AppConfig = loadConfig()
     if (!llmReady(cfg.llm)) {
-      sendToChat('chat:reply', { ok: false, content: '咕咕的大脑还没接上：右上角设置里填 LLM API（推荐 DeepSeek 或智谱 GLM）', kaomoji: '(⊙_⊙)' })
+      sendToChat('chat:reply', { ok: false, content: 'pet 的大脑还没接上：设置里填 LLM API（推荐 DeepSeek 或智谱 GLM）', kaomoji: '(⊙_⊙)' })
       return
     }
     if (this.busy) {
@@ -202,7 +202,7 @@ export class Brain {
         void this.memoryExtract(userText, clean, cfg)
         return
       }
-      sendToChat('chat:reply', { ok: false, content: '咕咕绕了四圈没想明白，换个说法试试？', kaomoji: '(⊙_⊙)' })
+      sendToChat('chat:reply', { ok: false, content: 'pet 绕了四圈没想明白，换个说法试试？', kaomoji: '(⊙_⊙)' })
     } finally {
       this.busy = false
     }

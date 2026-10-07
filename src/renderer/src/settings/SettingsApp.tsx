@@ -26,7 +26,7 @@ interface PlayerLite {
  */
 export function SettingsApp(): JSX.Element {
   // LLM
-  const [cfg, setCfg] = useState({ baseUrl: '', apiKey: '', model: '', personaName: '咕咕' })
+  const [cfg, setCfg] = useState({ baseUrl: '', apiKey: '', model: '', personaName: 'pet' })
   const [llmSaved, setLlmSaved] = useState('')
   const [testResult, setTestResult] = useState('')
   // 天气
@@ -182,6 +182,7 @@ export function SettingsApp(): JSX.Element {
           测试连接
         </button>
         {(llmSaved || testResult) && <span className="panel-hint">{llmSaved || testResult}</span>}
+        {cfg.apiKey === '__SET__' && <span className="panel-hint">Key 已安全保存，留空即沿用</span>}
       </div>
 
       <div className="panel-sep" />
@@ -263,7 +264,7 @@ export function SettingsApp(): JSX.Element {
       <div className="panel-sep" />
 
       <button className="panel-link panel-link-danger" onClick={() => window.gugu.quit()}>
-        <span>🚪 退出咕咕</span>
+        <span>🚪 退出 pet</span>
       </button>
     </div>
   )

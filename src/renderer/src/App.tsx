@@ -166,7 +166,7 @@ export default function App(): JSX.Element {
           'bubble',
           makeBubble({
             kind: 'say',
-            text: r.error === 'mic-denied' ? '麦克风权限被拒了：系统设置 → 隐私与安全性 → 麦克风，勾选咕咕' : '麦克风启动失败…',
+            text: r.error === 'mic-denied' ? '麦克风权限被拒了：系统设置 → 隐私与安全性 → 麦克风，勾选 pet' : '麦克风启动失败…',
             ttl: 8000
           })
         )

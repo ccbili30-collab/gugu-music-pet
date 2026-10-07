@@ -21,7 +21,7 @@ export function ChatApp(): JSX.Element {
   const [input, setInput] = useState('')
   const [thinking, setThinking] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
-  const [cfg, setCfg] = useState({ baseUrl: '', apiKey: '', model: '', personaName: '咕咕' })
+  const [cfg, setCfg] = useState({ baseUrl: '', apiKey: '', model: '', personaName: 'pet' })
   const [testResult, setTestResult] = useState<string>('')
   const [configured, setConfigured] = useState(true)
   const bodyRef = useRef<HTMLDivElement>(null)
@@ -67,7 +67,7 @@ export function ChatApp(): JSX.Element {
   return (
     <div className="chat-app">
       <div className="chat-header">
-        <span>🕊️ {cfg.personaName || '咕咕'} · 音乐伙伴</span>
+        <span>🕊️ {cfg.personaName || 'pet'} · 音乐伙伴</span>
         <button className="chat-gear" title="大脑设置" onClick={() => setShowSettings((v) => !v)}>
           ⚙️
         </button>
@@ -134,7 +134,7 @@ export function ChatApp(): JSX.Element {
         {msgs.length === 0 && !configured && (
           <div className="chat-empty">
             <span className="bird">🕊️</span>
-            先在右上角 ⚙️ 填好 LLM API，咕咕才能思考
+            先在右上角 ⚙️ 填好 LLM API，pet 才能思考
             <br />
             （推荐 DeepSeek / 智谱 GLM，任意 OpenAI 兼容接口都行）
           </div>
@@ -187,7 +187,7 @@ export function ChatApp(): JSX.Element {
       <div className="chat-input-bar">
         <input
           className="chat-input"
-          placeholder={`跟${cfg.personaName || '咕咕'}说点什么…`}
+          placeholder={`跟 ${cfg.personaName || 'pet'} 说点什么…`}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {

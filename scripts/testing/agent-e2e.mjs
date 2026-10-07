@@ -1,4 +1,18 @@
 // Agent 端到端测试：mock LLM → 工具调用 → 真实播放 → 状态回报
+
+// ⚠️ 测试隔离：快照并最终恢复用户 config.json（LLM key 不被 mock 覆盖）
+import { readFileSync, writeFileSync, existsSync, copyFileSync, unlinkSync } from 'node:fs'
+import { homedir } from 'node:os'
+import { join } from 'node:path'
+const CFG = join(homedir(), 'Library/Application Support/Gugu Music Pet/config.json')
+const BAK = '/tmp/gugu-config-bak.json'
+const hadCfg = existsSync(CFG)
+if (hadCfg) copyFileSync(CFG, BAK)
+process.on('exit', () => {
+  if (hadCfg) copyFileSync(BAK, CFG)
+  else if (existsSync(CFG)) unlinkSync(CFG)
+})
+
 const get = async (path) => (await fetch('http://127.0.0.1:9222/json/list')).then().then(async (r) => (await r.json()).filter((t) => t.title.includes(path)))
 const list = await (await fetch('http://127.0.0.1:9222/json/list')).json()
 const pet = list.find((t) => t.title === 'Gugu Pet')

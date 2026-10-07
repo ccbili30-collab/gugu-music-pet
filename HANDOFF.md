@@ -2,6 +2,13 @@
 
 > 更新时间：2026-09-28 · M1–M7 全部完成（M7 于新机器收尾并实测） · 项目进度：可交付
 
+## 2026-10-07 晚间追加
+
+- **连击手感**：单击即跳（地面弹跳 vy -340~-500 + 随机水平抖动 + 强挤压 + 爱心），悬浮态点击也给冲量跳动；连点连跳。
+- **头顶输入框极简**：透明底 + 1px 墨色细线（focus 加深），发送钮同款细线无填充。
+- **文案全面 pet 化**：用户可见字符串的 咕咕/gugu 全部换成 pet（personaName 默认 'pet'；窗口/托盘/气泡/提示词）。内部标识（window.gugu、gugu-pack://、productName）未动——productName 改动会换 userData 路径导致用户丢配置。
+- **LLM key 永久化**：机制本就安全（safeStorage→钥匙串 llmKeyEnc）；之前丢 key 是 **e2e 用 mock 覆盖了 config.json**——三套 e2e 已加 config 快照/恢复守卫；设置面板对已存 key 显示"留空即沿用"。
+
 ## 2026-10-07 大更新速览
 
 - **宠物换代**：预设只剩**大肥鱼**（DeepSeek 鲸鱼娘贴纸，dafeiyu-001 v1.3.0 24 张，yyh-001/dsh-meme-packs，personal 许可，见 characters/dafeiyu/CREDIT.md）。烘焙链 `scripts/bake-image-pack.mjs`（sips 转 png → 纯 Node PNG 解码 lib-png.mjs → **洪水填充抠白**（只抠边连通背景白，2 轮近白蚀刻 + 3x3 羽化）→ **448 原图直出格（零压缩，超格才区域平均重采样）**，显示 ~104px；⚠️ 重采样反预乘必须 `255*cr/ca`——直接 `cr/ca` 会全黑（cr 是 a∈[0,1] 预乘、ca 是 0-255 原值累加））。pack.pixel=false → linear 采样（照片系）。pigeon/chick 已删（托盘图标固定入库不再生成；应用图标改为大肥鱼）。

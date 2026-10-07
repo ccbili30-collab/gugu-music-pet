@@ -17,6 +17,8 @@ export class Animator {
   private elapsed = 0
   private frameIdx = 0
   private flipped = false
+  /** 编舞锁帧：非空时定格该帧（动作边界由 DanceDirector 切换） */
+  private pinned: string | null = null
   currentFrame = ''
 
   constructor(private loaded: LoadedPack) {
@@ -56,7 +58,8 @@ export class Animator {
   }
 
   play(slot: SlotName, force = false): void {
-    if (this.slot === slot && !force) return
+    if (this.slot === slot && !force) return // 同槽位重复调用不清 pin（编舞锁帧）
+    this.pinned = null
     this.slot = slot
     this.elapsed = 0
     this.frameIdx = 0
@@ -65,7 +68,17 @@ export class Animator {
     this.currentFrame = r.frames[0] ?? this.currentFrame
   }
 
+  /** 锁定单帧（编舞用；play() 解锁） */
+  pin(frame: string): void {
+    this.pinned = frame
+    this.currentFrame = frame
+  }
+
   update(dt: number): void {
+    if (this.pinned) {
+      this.currentFrame = this.pinned
+      return
+    }
     const r = this.resolve(this.slot)
     this.flipped = r.flipped
     if (r.frames.length < 2) return

@@ -6,9 +6,6 @@ export interface MotionContext {
   vy: number
   walking: boolean
   sleeping: boolean
-  danceEnergy: number // 0..1，M5 节拍驱动
-  beatPulse: number // 节拍瞬间的冲击包络 0..1（衰减）
-  beatPhase: number // 连续相位，用于摇摆
 }
 
 export interface MotionOutput {
@@ -19,25 +16,18 @@ export interface MotionOutput {
 }
 
 /**
- * 变换律动层（v1 动效之二，与帧动画正交组合）：
- * 呼吸 / 落地挤压(squash&stretch) / 空中拉伸+侧倾 / 走路颠簸 / 节拍弹跳摇摆 / 睡眠慢呼吸。
+ * 变换律动层（与帧动画正交）：呼吸 / 落地/点击挤压 / 空中拉伸+侧倾 / 走路颠簸 / 睡眠慢呼吸。
+ * 节拍舞蹈已移交 dance.ts（8 拍编舞）——本层不再做任何节拍运动。
  */
 export class Motion {
   private t = 0
   // squash 弹簧（1 为中性，<1 被压扁）
   private squash = 1
   private squashV = 0
-  // 节拍弹跳弹簧
-  private bounce = 0
-  private bounceV = 0
   private walkPhase = 0
 
   kickSquash(impulse: number): void {
     this.squashV -= impulse * 14
-  }
-
-  beatKick(strength: number): void {
-    this.bounceV -= strength * 22
   }
 
   update(dt: number, ctx: MotionContext): MotionOutput {
@@ -49,12 +39,6 @@ export class Motion {
     this.squashV += (-(this.squash - 1) * k - this.squashV * c) * dt
     this.squash += this.squashV * dt
     this.squash = Math.min(Math.max(this.squash, 0.45), 1.6)
-
-    // 节拍弹跳弹簧
-    const bk = 220
-    const bc = 13
-    this.bounceV += (-this.bounce * bk - this.bounceV * bc) * dt
-    this.bounce += this.bounceV * dt
 
     const airborne = ctx.mode === 'ballistic' || ctx.mode === 'flyto' || ctx.mode === 'drag'
     const speed = Math.hypot(ctx.vx, ctx.vy)
@@ -86,14 +70,6 @@ export class Motion {
       this.walkPhase += dt * Math.PI * 2 * 1.7
       offsetY -= Math.abs(Math.sin(this.walkPhase)) * 2.5
       rotation += Math.sin(this.walkPhase * 0.5) * 0.03
-    }
-
-    // 节拍律动（舞蹈/伴唱，M5 驱动；能量为 0 时无效果）
-    if (ctx.danceEnergy > 0.01 && !airborne) {
-      const e = ctx.danceEnergy
-      rotation += Math.sin(ctx.beatPhase) * 0.14 * e
-      scaleX *= 1 + Math.abs(Math.sin(ctx.beatPhase)) * 0.06 * e
-      offsetY -= this.bounce * e
     }
 
     // 落地/点击挤压（体积近似守恒）

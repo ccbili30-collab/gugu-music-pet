@@ -6,6 +6,7 @@ import { Animator } from './animator'
 import { Motion } from './motion'
 import { Physics } from './physics'
 import { Particles } from './particles'
+import { DanceDirector, type DanceTransform } from './dance'
 import { IdleScheduler, type IdleAction } from './scheduler'
 import type { SlotName } from './types'
 import { bus, makeBubble } from './bus'
@@ -244,9 +245,11 @@ export class PetEngine {
     return performance.now() < this.hummingUntil
   }
 
+  private dance = new DanceDirector()
+
   setAudioSource(src: AudioSource): void {
     this.audioSource = src
-    this.beat.onBeat = (strength) => this.motion.beatKick(strength)
+    this.beat.onBeat = () => this.dance.onBeat(this.beat.energy)
   }
 
   /** 频谱 → 低音/高音能量（快攻慢放）。低音横压扁、高音纵拉伸。 */
@@ -676,12 +679,9 @@ export class PetEngine {
     const info = this.loaded.frameInfo.get(frameName)
     const [, fh] = this.loaded.frameSize
     if (info) this.sprite.anchor.set(0.5, (info.groundRow + 1) / fh)
-    // 频谱形变：高音把 pet 拉得特别长，低音横向压扁（与点击挤压、律动层叠加）
-    const stretchX = 1 + this.spectral.bass * 0.45
-    const stretchY = 1 + this.spectral.treble * 0.85
     this.sprite.scale.set(
-      (this.animator.isFlipped ? -1 : 1) * this.loaded.scale * this.scaleFactor * stretchX,
-      this.loaded.scale * this.scaleFactor * stretchY
+      (this.animator.isFlipped ? -1 : 1) * this.loaded.scale * this.scaleFactor,
+      this.loaded.scale * this.scaleFactor
     )
 
     // ---- 变换律动层 ----
@@ -690,15 +690,24 @@ export class PetEngine {
       vx: ph.vx,
       vy: ph.vy,
       walking: !!this.walking,
-      sleeping: this.sleeping,
-      danceEnergy: this.danceEnergy,
-      beatPulse: 0,
-      beatPhase: this.beat.beatPhase * Math.PI * 2
+      sleeping: this.sleeping
     })
-    this.motionContainer.scale.set(out.scaleX, out.scaleY)
-    this.motionContainer.rotation = out.rotation
-    const lx = Math.round(ph.x - ph.workArea.x)
-    const ly = Math.round(ph.y - ph.workArea.y + out.offsetY)
+    // 8 拍编舞层：地面且有舞能时接管节拍运动（帧在动作边界锁定）
+    let dance: DanceTransform | null = null
+    const dancing = this.danceEnergy > 0.05 && !ph.airborne && !this.sleeping
+    if (dancing) {
+      dance = this.dance.update(dt, this.beat.beatPhase, this.danceEnergy, this.spectral.treble)
+      this.motionContainer.scale.set(out.scaleX * dance.scaleX, out.scaleY * dance.scaleY)
+      this.motionContainer.rotation = out.rotation + dance.rot
+      if (this.dance.pinnedFrame && this.loaded.textures.has(this.dance.pinnedFrame)) {
+        this.animator.pin(this.dance.pinnedFrame)
+      }
+    } else {
+      this.motionContainer.scale.set(out.scaleX, out.scaleY)
+      this.motionContainer.rotation = out.rotation
+    }
+    const lx = Math.round(ph.x - ph.workArea.x + (dance ? dance.offsetX : 0))
+    const ly = Math.round(ph.y - ph.workArea.y + out.offsetY + (dance ? dance.offsetY : 0))
     this.motionContainer.position.set(lx, ly)
 
     // ---- 通知跟随层（overlay/穿透区域） ----

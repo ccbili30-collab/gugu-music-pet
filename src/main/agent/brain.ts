@@ -33,12 +33,17 @@ export class Brain {
   drives = new DriveSystem()
   private activityUntil = 0
   private lastAutonomyAt = Date.now()
-  private nextAutonomyDelay = 120_000
+  private nextAutonomyDelay = 75_000 // 首次自主 75s 内（原来 2-5 分钟太沉默）
   private timer: NodeJS.Timeout | null = null
   private busy = false
   private sleepStartedAt = 0
 
   boot(): void {
+    // 启动问候（内置文案，无 LLM 也有生命感）
+    const greetings = ['我在这儿♪ 想听歌就双击我', '今天想听点什么？', '我又回来啦(๑>◡<๑)', '把鼠标放我身上试试～']
+    setTimeout(() => {
+      sendToPet('pet:bubble', { kind: 'say', text: greetings[Math.floor(Math.random() * greetings.length)] } as PetBubbleMsg)
+    }, 12_000)
     this.history = loadHistory()
     // 会话上下文从可见历史重建（最近 12 条）
     for (const m of this.history.slice(-12)) {
@@ -253,7 +258,12 @@ export class Brain {
     )
     if (!res.ok) return
     const m = /\{[\s\S]*\}/.exec(res.content)
-    if (!m) return
+    if (!m) {
+      // 模型没按格式回：给个颜文字气泡，绝不沉默
+      const fbs = ['(๑˃̵ᴗ˂̵)و', '(´,,•ω•,,)♡', '( •̀ ω •́ )✧', '(灬°ω°灬)']
+      sendToPet('pet:bubble', { kind: 'say', kaomoji: fbs[Math.floor(Math.random() * fbs.length)] } as PetBubbleMsg)
+      return
+    }
     try {
       const parsed = JSON.parse(m[0]) as { intent?: string; bubble?: string; kaomoji?: string }
       const intent = parsed.intent ?? 'none'

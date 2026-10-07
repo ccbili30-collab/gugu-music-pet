@@ -289,9 +289,11 @@ export class PetEngine {
     }
   }
 
-  /** 宠物脚底点的窗口本地坐标（overlay 跟随层/穿透区域用） */
+  /** 宠物脚底点的窗口本地坐标（含舞蹈位移的视觉位置） */
   get petLocal(): { x: number; y: number } {
-    return { x: this.physics.x - this.physics.workArea.x, y: this.physics.y - this.physics.workArea.y }
+    const dx = this.lastSent.x - Math.round(this.physics.x - this.physics.workArea.x)
+    const dy = this.lastSent.y - Math.round(this.physics.y - this.physics.workArea.y)
+    return { x: this.physics.x - this.physics.workArea.x + dx, y: this.physics.y - this.physics.workArea.y + dy }
   }
 
   /** 每帧宠物移动回调（App 用它驱动跟随层与穿透区域上报） */
@@ -706,14 +708,17 @@ export class PetEngine {
       this.motionContainer.scale.set(out.scaleX, out.scaleY)
       this.motionContainer.rotation = out.rotation
     }
-    const lx = Math.round(ph.x - ph.workArea.x + (dance ? dance.offsetX : 0))
-    const ly = Math.round(ph.y - ph.workArea.y + out.offsetY + (dance ? dance.offsetY : 0))
-    this.motionContainer.position.set(lx, ly)
+    const lx = Math.round(ph.x - ph.workArea.x)
+    const ly = Math.round(ph.y - ph.workArea.y)
+    this.motionContainer.position.set(lx + (dance ? dance.offsetX : 0), ly + out.offsetY + (dance ? dance.offsetY : 0))
+    // 跟随层与穿透区域用"视觉位置"（含舞蹈位移）——否则跳舞时播放栏按钮区域错位点不中
+    const fx = Math.round(lx + (dance ? dance.offsetX : 0))
+    const fy = Math.round(ly)
 
-    // ---- 通知跟随层（overlay/穿透区域） ----
-    if (lx !== this.lastSent.x || ly !== this.lastSent.y) {
-      this.lastSent = { x: lx, y: ly }
-      this.onPetMoved?.(lx, ly)
+    // ---- 通知跟随层（overlay/穿透区域，坐标含舞蹈位移） ----
+    if (fx !== this.lastSent.x || fy !== this.lastSent.y) {
+      this.lastSent = { x: fx, y: fy }
+      this.onPetMoved?.(fx, fy)
     }
   }
 }

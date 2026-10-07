@@ -1,4 +1,20 @@
 import { app, screen } from 'electron'
+import { mkdirSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+
+// 测试实例隔离：--gugu-test 时 userData 指到临时目录，测试再也无法覆盖用户 key/历史
+if (process.argv.includes('--gugu-test')) {
+  const ud = join(tmpdir(), 'gugu-test-' + Date.now().toString(36))
+  mkdirSync(ud, { recursive: true })
+  app.setPath('userData', ud)
+  try {
+    writeFileSync('/tmp/gugu-test-ud', ud)
+  } catch {
+    /* 只读环境忽略 */
+  }
+  console.log('[test-mode] isolated userData:', ud)
+}
 import { createPetWindow, getPetWindow, focusPet, setAppQuitting } from './windows'
 import { createTray, refreshTray } from './tray'
 import { registerIpc } from './ipc'

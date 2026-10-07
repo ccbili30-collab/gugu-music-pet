@@ -509,89 +509,53 @@ body {
 /* ---------- 迷你播放器（宠物头顶导航键） ---------- */
 .mini-player {
   position: absolute;
-  left: -172px;
-  top: 14px; /* pet 正下方：头顶留给对话，脚下是它的播放台 */
+  left: -140px;
+  top: 12px;
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 2px;
   background: var(--paper);
   border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 7px 9px 7px 7px;
+  border-radius: 999px;
+  padding: 4px 14px 5px 6px;
   box-shadow: var(--shadow-soft);
   backdrop-filter: var(--blur-glass);
   -webkit-backdrop-filter: var(--blur-glass);
   animation: bubble-in 0.25s ease-out;
-}
-
-.mp-cover {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
-  object-fit: cover;
-  flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(120, 90, 60, 0.22);
-}
-
-.mp-cover-empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #ffe8d9, #ffd0b5);
-}
-
-.mp-cover-empty img {
-  width: 20px;
-  height: 20px;
-  image-rendering: pixelated;
+  max-width: 300px;
 }
 
 .mp-mid {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
   min-width: 0;
-  width: 132px;
+  flex: 1;
+  margin-left: 5px;
 }
 
 .mp-name {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 600;
   color: var(--ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.mp-artist {
-  font-size: 10px;
-  color: var(--ink-2);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .mp-progress {
-  margin-top: 4px;
-  height: 3px;
-  border-radius: 2px;
-  background: rgba(58, 58, 68, 0.12);
+  height: 2px;
+  border-radius: 1px;
+  background: rgba(58, 58, 68, 0.14);
   overflow: hidden;
 }
 
 .mp-progress-fill {
   height: 100%;
-  border-radius: 2px;
   background: linear-gradient(90deg, var(--accent), #ffb38a);
   transition: width 0.8s linear;
 }
 
-.mp-ctrls {
-  display: flex;
-  align-items: center;
-  gap: 1px;
-  flex-shrink: 0;
-}
 
 .mp-btn {
   border: none;

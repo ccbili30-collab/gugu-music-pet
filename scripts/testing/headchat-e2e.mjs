@@ -4,9 +4,17 @@
 import { readFileSync, writeFileSync, existsSync, copyFileSync, unlinkSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
-const CFG = join(homedir(), 'Library/Application Support/Gugu Music Pet/config.json')
+import { readFileSync as _rf, existsSync as _ex } from 'node:fs'
+// 测试实例（--gugu-test）的 userData 路径；否则用户真实目录
+const UD_ROOT = (() => {
+  try {
+    if (_ex('/tmp/gugu-test-ud')) return _rf('/tmp/gugu-test-ud', 'utf8').trim()
+  } catch {}
+  return join(homedir(), 'Library/Application Support/Gugu Music Pet')
+})()
+const CFG = join(UD_ROOT, 'config.json')
 const BAK = '/tmp/gugu-config-bak.json'
-const HIST = join(homedir(), 'Library/Application Support/Gugu Music Pet/chat-history.json')
+const HIST = join(UD_ROOT, 'chat-history.json')
 const HBAK = '/tmp/gugu-hist-bak.json'
 const hadCfg = existsSync(CFG)
 const hadHist = existsSync(HIST)

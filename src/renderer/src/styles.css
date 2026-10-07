@@ -509,8 +509,8 @@ body {
 /* ---------- 迷你播放器（宠物头顶导航键） ---------- */
 .mini-player {
   position: absolute;
-  left: -322px;
-  top: -146px;
+  left: -172px;
+  top: 14px; /* pet 正下方：头顶留给对话，脚下是它的播放台 */
   display: flex;
   align-items: center;
   gap: 9px;

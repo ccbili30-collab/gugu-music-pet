@@ -78,7 +78,7 @@ describe('Physics 投掷（ballistic）', () => {
   it('高速撞墙反弹并发出 wall 事件，速度按系数衰减', () => {
     const p = makePhysics()
     p.x = 200
-    p.y = 850
+    p.y = 760
     p.startFling(-1800, 0)
     const events = runUntil(p, () => p.vx > 0, 5)
     const walls = events.filter((e) => e.type === 'wall')
@@ -93,7 +93,7 @@ describe('Physics 投掷（ballistic）', () => {
   it('低速撞墙不产生 wall 事件', () => {
     const p = makePhysics()
     p.x = 200
-    p.y = 850
+    p.y = 760
     p.startFling(-250, 0)
     const events = runUntil(p, () => p.mode === 'ground' && p.vx === 0, 30)
     expect(events.some((e) => e.type === 'wall')).toBe(false)

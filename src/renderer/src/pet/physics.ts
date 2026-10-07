@@ -39,7 +39,8 @@ export class Physics {
   private fly: FlyPath | null = null
 
   get floorY(): number {
-    return this.workArea.y + this.workArea.height - 10
+    // 底部留 88px：pet 脚下的迷你播放条常驻空间（pet 站在播放器上）
+    return this.workArea.y + this.workArea.height - 88
   }
 
   get leftWall(): number {

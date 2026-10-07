@@ -49,13 +49,63 @@ function encodePng(width: number, height: number, rgba: Buffer): Buffer {
   ])
 }
 
-/** 软抠白（与烘焙器同参数） */
-function softKeyWhite(rgba: Buffer, t1 = 26, t2 = 90): void {
-  for (let i = 0; i < rgba.length; i += 4) {
-    const d = Math.max(255 - rgba[i], 255 - rgba[i + 1], 255 - rgba[i + 2])
-    const a = d <= t1 ? 0 : d >= t2 ? 1 : (d - t1) / (t2 - t1)
-    rgba[i + 3] = Math.round(rgba[i + 3] * a)
+/** 洪水填充抠白底（与 scripts/bake-image-pack.mjs 同算法）：
+ *  只抠与四边连通的背景白，内部白色保留；2 轮近白蚀刻 + 3x3 边界羽化。 */
+function floodKeyWhite(rgba: Buffer, w: number, h: number): void {
+  const nearWhite = (i: number, tol: number): boolean => rgba[i] >= tol && rgba[i + 1] >= tol && rgba[i + 2] >= tol
+  const bg = new Uint8Array(w * h)
+  const queue: number[] = []
+  const push = (x: number, y: number): void => {
+    const p = y * w + x
+    if (!bg[p] && nearWhite(p * 4, 235)) {
+      bg[p] = 1
+      queue.push(p)
+    }
   }
+  for (let x = 0; x < w; x++) {
+    push(x, 0)
+    push(x, h - 1)
+  }
+  for (let y = 0; y < h; y++) {
+    push(0, y)
+    push(w - 1, y)
+  }
+  while (queue.length) {
+    const p = queue.pop() as number
+    const x = p % w
+    const y = (p / w) | 0
+    if (x > 0) push(x - 1, y)
+    if (x < w - 1) push(x + 1, y)
+    if (y > 0) push(x, y - 1)
+    if (y < h - 1) push(x, y + 1)
+  }
+  for (let round = 0; round < 2; round++) {
+    const add: number[] = []
+    for (let y = 1; y < h - 1; y++) {
+      for (let x = 1; x < w - 1; x++) {
+        const p = y * w + x
+        if (bg[p] || !nearWhite(p * 4, 214)) continue
+        const n = (bg[p - 1] ? 1 : 0) + (bg[p + 1] ? 1 : 0) + (bg[p - w] ? 1 : 0) + (bg[p + w] ? 1 : 0)
+        if (n >= 2) add.push(p)
+      }
+    }
+    if (!add.length) break
+    for (const p of add) bg[p] = 1
+  }
+  const alpha = new Uint8Array(w * h)
+  for (let p = 0; p < w * h; p++) alpha[p] = bg[p] ? 0 : 255
+  const feathered = Uint8Array.from(alpha)
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const p = y * w + x
+      if (alpha[p] === 255 && (bg[p - 1] || bg[p + 1] || bg[p - w] || bg[p + w])) {
+        let sum = 0
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) sum += alpha[p + dy * w + dx]
+        feathered[p] = Math.round(sum / 9)
+      }
+    }
+  }
+  for (let p = 0; p < w * h; p++) rgba[p * 4 + 3] = feathered[p]
 }
 
 function contentBox(rgba: Buffer, w: number, h: number): { x0: number; y0: number; w: number; h: number } | null {
@@ -107,7 +157,7 @@ export async function importCustomPack(): Promise<ImportResult> {
         rgba[i] = rgba[i + 2]
         rgba[i + 2] = b
       }
-      softKeyWhite(rgba)
+      floodKeyWhite(rgba, w, h)
       const box = contentBox(rgba, w, h)
       if (!box) continue
       const scale = Math.min(TARGET_H / box.h, (CELL - 12) / box.w, 1.5)

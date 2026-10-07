@@ -14,14 +14,67 @@ const OUT = join(root, 'src/renderer/public/characters', id)
 const CELL = 128
 const TARGET_H = 108 // 内容最大高度，底部留白 6px 触地
 
-/** 软抠白：离纯白越远越实，纯白全透（保留贴纸白描边为柔边） */
-function softKeyWhite(rgba, t1 = 26, t2 = 90) {
-  for (let i = 0; i < rgba.length; i += 4) {
-    const r = rgba[i], g = rgba[i + 1], b = rgba[i + 2]
-    const d = Math.max(255 - r, 255 - g, 255 - b) // 与白色的最大通道距离
-    const a = d <= t1 ? 0 : d >= t2 ? 1 : (d - t1) / (t2 - t1)
-    rgba[i + 3] = Math.round(rgba[i + 3] * a)
+/** 洪水填充抠白底：只抠与四边连通的近白背景，内部白色（高光/装饰）完整保留。
+ *  边缘做 2 轮近白蚀刻吃掉 JPEG 白晕，再对边界带做 3x3 alpha 羽化。 */
+function floodKeyWhite(rgba, w, h) {
+  const nearWhite = (i, tol) => rgba[i] >= tol && rgba[i + 1] >= tol && rgba[i + 2] >= tol
+  const bg = new Uint8Array(w * h)
+  const queue = []
+  // 种子：四边的近白像素
+  const push = (x, y) => {
+    const p = y * w + x
+    if (!bg[p] && nearWhite(p * 4, 235)) {
+      bg[p] = 1
+      queue.push(p)
+    }
   }
+  for (let x = 0; x < w; x++) {
+    push(x, 0)
+    push(x, h - 1)
+  }
+  for (let y = 0; y < h; y++) {
+    push(0, y)
+    push(w - 1, y)
+  }
+  while (queue.length) {
+    const p = queue.pop()
+    const x = p % w
+    const y = (p / w) | 0
+    if (x > 0) push(x - 1, y)
+    if (x < w - 1) push(x + 1, y)
+    if (y > 0) push(x, y - 1)
+    if (y < h - 1) push(x, y + 1)
+  }
+  // 边缘蚀刻 ×2：贴着背景的近白像素（JPEG 白晕）划归背景
+  for (let round = 0; round < 2; round++) {
+    const add = []
+    for (let y = 1; y < h - 1; y++) {
+      for (let x = 1; x < w - 1; x++) {
+        const p = y * w + x
+        if (bg[p]) continue
+        if (!nearWhite(p * 4, 214)) continue
+        const n = (bg[p - 1] ? 1 : 0) + (bg[p + 1] ? 1 : 0) + (bg[p - w] ? 1 : 0) + (bg[p + w] ? 1 : 0)
+        if (n >= 2) add.push(p)
+      }
+    }
+    if (!add.length) break
+    for (const p of add) bg[p] = 1
+  }
+  // alpha：背景 0 / 内容 255；边界带 3x3 羽化
+  const alpha = new Uint8Array(w * h)
+  for (let p = 0; p < w * h; p++) alpha[p] = bg[p] ? 0 : 255
+  const feathered = Uint8Array.from(alpha)
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const p = y * w + x
+      if (alpha[p] === 255 && (bg[p - 1] || bg[p + 1] || bg[p - w] || bg[p + w])) {
+        let sum = 0
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) sum += alpha[p + dy * w + dx]
+        feathered[p] = Math.round(sum / 9)
+      }
+    }
+  }
+  for (let p = 0; p < w * h; p++) rgba[p * 4 + 3] = feathered[p]
 }
 
 /** 内容 bbox（alpha>16） */
@@ -48,7 +101,7 @@ function loadSticker(file) {
   execFileSync('sips', ['-s', 'format', 'png', file, '--out', pngPath], { stdio: 'ignore' })
   const img = decodePng(readFileSync(pngPath))
   rmSync(pngPath)
-  softKeyWhite(img.rgba)
+  floodKeyWhite(img.rgba, img.width, img.height)
   return img
 }
 

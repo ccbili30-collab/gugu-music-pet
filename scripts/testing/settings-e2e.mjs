@@ -1,4 +1,17 @@
 // 设置面板端到端测试：设置窗打开 → 城市保存 → 音量下发 → 角色包切换（真实 app + CDP）
+// 自定义包夹具：复制 dafeiyu 为 userData/characters/custom-e2e（模拟导入产物，测 gugu-pack 协议链路）
+import { mkdirSync, copyFileSync, readFileSync, writeFileSync } from 'node:fs'
+import { homedir } from 'node:os'
+import { join } from 'node:path'
+{
+  const ud = join(homedir(), 'Library/Application Support/Gugu Music Pet/characters/custom-e2e')
+  mkdirSync(ud, { recursive: true })
+  copyFileSync('src/renderer/public/characters/dafeiyu/sheet.png', join(ud, 'sheet.png'))
+  const pk = JSON.parse(readFileSync('src/renderer/public/characters/dafeiyu/pack.json', 'utf8'))
+  pk.id = 'custom-e2e'
+  pk.name = '自定义测试鱼'
+  writeFileSync(join(ud, 'pack.json'), JSON.stringify(pk))
+}
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 const list = async () => (await (await fetch('http://127.0.0.1:9222/json/list')).json()).filter((t) => t.type === 'page')

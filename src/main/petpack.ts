@@ -4,8 +4,8 @@ import { writeFileSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { deflateSync } from 'node:zlib'
 
-const CELL = 128
-const TARGET_H = 108
+const CELL = 320
+const TARGET_H = 300 // 高清格：显示时由 pack.scale 缩小，放大宠物也不糊
 
 // ---- PNG 编码（RGBA8 filter0，与 scripts/lib-png 同款）----
 const CRC_TABLE = (() => {
@@ -160,15 +160,39 @@ export async function importCustomPack(): Promise<ImportResult> {
       floodKeyWhite(rgba, w, h)
       const box = contentBox(rgba, w, h)
       if (!box) continue
-      const scale = Math.min(TARGET_H / box.h, (CELL - 12) / box.w, 1.5)
+      const scale = Math.min(TARGET_H / box.h, (CELL - 12) / box.w, 1)
       const dw = Math.max(1, Math.round(box.w * scale))
       const dh = Math.max(1, Math.round(box.h * scale))
+      // 区域平均重采样（box filter，预乘 alpha）
       const cell = Buffer.alloc(dw * dh * 4)
       for (let y = 0; y < dh; y++) {
-        const sy = Math.min(box.h - 1, Math.floor((y * box.h) / dh))
+        const y0 = (y * box.h) / dh
+        const y1 = ((y + 1) * box.h) / dh
         for (let x = 0; x < dw; x++) {
-          const sx = Math.min(box.w - 1, Math.floor((x * box.w) / dw))
-          rgba.copy(cell, (y * dw + x) * 4, ((box.y0 + sy) * w + box.x0 + sx) * 4, ((box.y0 + sy) * w + box.x0 + sx) * 4 + 4)
+          const x0 = (x * box.w) / dw
+          const x1 = ((x + 1) * box.w) / dw
+          let cr = 0, cg = 0, cb = 0, ca = 0, area = 0
+          for (let sy = Math.floor(y0); sy < Math.min(box.h, Math.ceil(y1)); sy++) {
+            const wy = Math.min(y1, sy + 1) - Math.max(y0, sy)
+            for (let sx = Math.floor(x0); sx < Math.min(box.w, Math.ceil(x1)); sx++) {
+              const wx = Math.min(x1, sx + 1) - Math.max(x0, sx)
+              const wgt = wx * wy
+              const i = ((box.y0 + sy) * w + box.x0 + sx) * 4
+              const a = rgba[i + 3] / 255
+              cr += rgba[i] * a * wgt
+              cg += rgba[i + 1] * a * wgt
+              cb += rgba[i + 2] * a * wgt
+              ca += rgba[i + 3] * wgt
+              area += wgt
+            }
+          }
+          const di = (y * dw + x) * 4
+          if (ca > 0.0001) {
+            cell[di] = Math.round(cr / ca)
+            cell[di + 1] = Math.round(cg / ca)
+            cell[di + 2] = Math.round(cb / ca)
+            cell[di + 3] = Math.round(ca / area)
+          }
         }
       }
       cells.push({ w: dw, h: dh, rgba: cell })
@@ -202,7 +226,7 @@ export async function importCustomPack(): Promise<ImportResult> {
     version: '1.0.0',
     type: 'frames' as const,
     pixel: false,
-    sprite: { image: 'sheet.png', frameSize: [CELL, CELL], scale: 0.78 },
+    sprite: { image: 'sheet.png', frameSize: [CELL, CELL], scale: 104 / CELL },
     frames,
     slots: { idle: { frames: frameNames, fps: 0.7, loop: true } },
     fallbacks: {}

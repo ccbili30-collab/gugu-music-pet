@@ -11,8 +11,8 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const id = process.argv[2] ?? 'dafeiyu'
 const SRC = join(root, 'characters', id, 'stickers')
 const OUT = join(root, 'src/renderer/public/characters', id)
-const CELL = 128
-const TARGET_H = 108 // 内容最大高度，底部留白 6px 触地
+const CELL = 320
+const TARGET_H = 300 // 高清源（~400px）只做 ~1.3x 温和缩小，显示时再由 pack.scale 缩到 ~104px
 
 /** 洪水填充抠白底：只抠与四边连通的近白背景，内部白色（高光/装饰）完整保留。
  *  边缘做 2 轮近白蚀刻吃掉 JPEG 白晕，再对边界带做 3x3 alpha 羽化。 */
@@ -105,16 +105,37 @@ function loadSticker(file) {
   return img
 }
 
-/** 缩放 RGBA（最近邻，贴纸风格可接受；输入已带 alpha） */
+/** 区域平均重采样（box filter，预乘 alpha）——缩小无锯齿、透明边缘颜色正确 */
 function scaleRgba(src, srcW, srcH, dstW, dstH) {
   const out = Buffer.alloc(dstW * dstH * 4)
   for (let y = 0; y < dstH; y++) {
-    const sy = Math.min(srcH - 1, Math.floor((y * srcH) / dstH))
+    const y0 = (y * srcH) / dstH
+    const y1 = ((y + 1) * srcH) / dstH
     for (let x = 0; x < dstW; x++) {
-      const sx = Math.min(srcW - 1, Math.floor((x * srcW) / dstW))
-      const si = (sy * srcW + sx) * 4
+      const x0 = (x * srcW) / dstW
+      const x1 = ((x + 1) * srcW) / dstW
+      let cr = 0, cg = 0, cb = 0, ca = 0, area = 0
+      for (let sy = Math.floor(y0); sy < Math.min(srcH, Math.ceil(y1)); sy++) {
+        const wy = Math.min(y1, sy + 1) - Math.max(y0, sy)
+        for (let sx = Math.floor(x0); sx < Math.min(srcW, Math.ceil(x1)); sx++) {
+          const wx = Math.min(x1, sx + 1) - Math.max(x0, sx)
+          const wgt = wx * wy
+          const i = (sy * srcW + sx) * 4
+          const a = src[i + 3] / 255
+          cr += src[i] * a * wgt
+          cg += src[i + 1] * a * wgt
+          cb += src[i + 2] * a * wgt
+          ca += src[i + 3] * wgt
+          area += wgt
+        }
+      }
       const di = (y * dstW + x) * 4
-      out[di] = src[si]; out[di + 1] = src[si + 1]; out[di + 2] = src[si + 2]; out[di + 3] = src[si + 3]
+      if (ca > 0.0001) {
+        out[di] = Math.round(cr / ca)
+        out[di + 1] = Math.round(cg / ca)
+        out[di + 2] = Math.round(cb / ca)
+        out[di + 3] = Math.round(ca / area)
+      }
     }
   }
   return out
@@ -166,7 +187,7 @@ for (const [slot, spec] of Object.entries(SLOT_MAP)) {
       const img = loadSticker(file)
       const box = contentBox(img)
       if (!box) continue
-      const scale = Math.min(TARGET_H / box.h, (CELL - 12) / box.w, 1.2)
+      const scale = Math.min(TARGET_H / box.h, (CELL - 12) / box.w, 1)
       const dw = Math.max(1, Math.round(box.w * scale))
       const dh = Math.max(1, Math.round(box.h * scale))
       const scaled = scaleRgba(
@@ -220,7 +241,7 @@ const pack = {
   version: '1.3.0',
   type: 'frames',
   pixel: false,
-  sprite: { image: 'sheet.png', frameSize: [CELL, CELL], scale: 0.78 },
+  sprite: { image: 'sheet.png', frameSize: [CELL, CELL], scale: 104 / CELL },
   frames,
   slots,
   fallbacks: { dance: 'idle', happy: 'idle', hurt: 'idle', peck: 'idle', hum: 'sit', walk_left: 'idle', fly_left: 'idle' }

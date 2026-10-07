@@ -6,11 +6,19 @@ import { homedir } from 'node:os'
 import { join } from 'node:path'
 const CFG = join(homedir(), 'Library/Application Support/Gugu Music Pet/config.json')
 const BAK = '/tmp/gugu-config-bak.json'
+const HIST = join(homedir(), 'Library/Application Support/Gugu Music Pet/chat-history.json')
+const HBAK = '/tmp/gugu-hist-bak.json'
 const hadCfg = existsSync(CFG)
+const hadHist = existsSync(HIST)
 if (hadCfg) copyFileSync(CFG, BAK)
+if (hadHist) copyFileSync(HIST, HBAK)
+// 测试前清空聊天历史：e2e 的 mock 对话会污染 brain 上下文（真实 LLM 看到假历史就不调工具）
+if (hadHist) unlinkSync(HIST)
 process.on('exit', () => {
   if (hadCfg) copyFileSync(BAK, CFG)
   else if (existsSync(CFG)) unlinkSync(CFG)
+  if (hadHist) copyFileSync(HBAK, HIST)
+  else if (existsSync(HIST)) unlinkSync(HIST)
 })
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))

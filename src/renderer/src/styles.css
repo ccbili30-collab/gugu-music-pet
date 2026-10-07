@@ -86,7 +86,7 @@ body {
 .head-chat {
   position: absolute;
   left: -116px;
-  bottom: 104px; /* 输入框底边距宠物头顶 */
+  bottom: 142px; /* 高于宠物常态头顶(≈104px)+频谱拉伸余量，互不重叠 */
   width: 232px;
   display: flex;
   flex-direction: column;

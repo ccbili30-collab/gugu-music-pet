@@ -25,8 +25,8 @@ export function computeRegions({ petX, petY, bubbleCount, hasTrack, hotOpen, hea
     rects.push({ x: petX - 258, y: petY - 138, w: 254, h: 46 })
   }
   if (headChatActive) {
-    // 头顶对话气泡（输入框 + 最多3条堆叠回复）
-    rects.push({ x: petX - 122, y: petY - 330, w: 250, h: 240 })
+    // 头顶对话气泡（输入框 + 最多3条堆叠回复；底边抬高后整体上移）
+    rects.push({ x: petX - 122, y: petY - 372, w: 250, h: 284 })
   }
   if (bubbleCount > 0) {
     // 右侧气泡带

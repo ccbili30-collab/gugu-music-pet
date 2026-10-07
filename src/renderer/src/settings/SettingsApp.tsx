@@ -126,7 +126,7 @@ export function SettingsApp(): JSX.Element {
   return (
     <div className="panel">
       <div className="panel-status">
-        <div className="panel-status-icon">🕊️</div>
+        <div className="panel-status-icon"><img src="icons/note.png" alt="" draggable={false} /></div>
         <div className="panel-status-text">
           <div className="panel-status-title">{statusTitle}</div>
           <div className="panel-status-sub">{statusSub}</div>
@@ -136,7 +136,7 @@ export function SettingsApp(): JSX.Element {
       <div className="panel-sep" />
 
       <div className="panel-row">
-        <span className="panel-label">🧠 LLM 大脑</span>
+        <span className="panel-label">LLM 大脑</span>
         <span className={`panel-badge ${llmConfigured ? 'panel-badge-ok' : 'panel-badge-warn'}`}>
           {llmConfigured ? '已配置' : '未配置'}
         </span>
@@ -193,7 +193,7 @@ export function SettingsApp(): JSX.Element {
       <div className="panel-sep" />
 
       <div className="panel-row">
-        <span className="panel-label">🌤️ 天气城市</span>
+        <span className="panel-label">天气城市</span>
         <div className="panel-inline panel-inline-right">
           {citySaved && <span className="panel-hint">{citySaved}</span>}
           <input
@@ -215,7 +215,7 @@ export function SettingsApp(): JSX.Element {
       <div className="panel-sep" />
 
       <div className="panel-row">
-        <span className="panel-label">🔊 音量</span>
+        <span className="panel-label">音量</span>
         <div className="panel-inline panel-inline-right">
           <input
             type="range"
@@ -233,7 +233,7 @@ export function SettingsApp(): JSX.Element {
       <div className="panel-sep" />
 
       <div className="panel-row">
-        <span className="panel-label">🐦 角色包</span>
+        <span className="panel-label">角色包</span>
         <div className="panel-inline panel-inline-right">
           {packs.map((p) => (
             <button
@@ -285,7 +285,7 @@ export function SettingsApp(): JSX.Element {
           window.setTimeout(() => setDemoMsg(''), 4000)
         }}
       >
-        <span>🎭 自主行为演示（随机心情选歌单听歌哼歌）</span>
+        <span>自主行为演示（随机心情选歌单听歌哼歌）</span>
         <span className="panel-link-arrow">›</span>
       </button>
       {demoMsg && <div className="panel-hint">{demoMsg}</div>}
@@ -304,7 +304,7 @@ export function SettingsApp(): JSX.Element {
       <div className="panel-sep" />
 
       <button className="panel-link panel-link-danger" onClick={() => window.gugu.quit()}>
-        <span>🚪 退出 pet</span>
+        <span>退出 pet</span>
       </button>
     </div>
   )

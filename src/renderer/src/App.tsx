@@ -57,9 +57,13 @@ export default function App(): JSX.Element {
     return off
   }, [])
 
-  // 功能菜单已收进 mac 托盘：窗口内右键只做拦截（避免 Chromium 默认菜单）
+  // 右键宠物 → 打开对话面板（聊天窗）；空白处只拦截默认菜单
   useEffect(() => {
-    const onCtx = (e: MouseEvent): void => e.preventDefault()
+    const onCtx = (e: MouseEvent): void => {
+      e.preventDefault()
+      const eng = engineRef.current
+      if (eng && eng.contextMenuHit(e.clientX, e.clientY)) window.gugu.openChat()
+    }
     window.addEventListener('contextmenu', onCtx)
     return () => window.removeEventListener('contextmenu', onCtx)
   }, [])

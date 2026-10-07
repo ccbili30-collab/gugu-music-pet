@@ -107,7 +107,7 @@ export function LoginApp(): JSX.Element {
         )}
         {phase === 'success' && (
           <div className="login-success">
-            <div className="login-bird">🥤</div>
+            <div className="login-bird">♪</div>
             欢迎回来{nickname ? `，${nickname}` : ''}！
           </div>
         )}
@@ -123,7 +123,7 @@ export function LoginApp(): JSX.Element {
         {phase === 'logged-in' && (
           <>
             <div className="login-success">
-              <div className="login-bird">🥤</div>
+              <div className="login-bird">♪</div>
               已登录{nickname ? `：${nickname}` : ''}
             </div>
             <button

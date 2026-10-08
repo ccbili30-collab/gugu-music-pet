@@ -456,19 +456,24 @@ export class PetEngine {
           const dt = (last.t - first.t) / 1000
           const vx = (last.x - first.x) / dt
           const vy = (last.y - first.y) / dt
-          if (this.hoverRequested) {
-            // 悬浮模式：投掷变成阻尼滑行，不会坠地
+          const speed = Math.hypot(vx, vy)
+          if (speed < 600) {
+            // 慢放：阻尼滑行停在当前位置（"放在这"）
             this.physics.mode = 'hover'
-            this.physics.vx = vx * 0.5
-            this.physics.vy = vy * 0.5
+            this.physics.vx = vx * 0.3
+            this.physics.vy = vy * 0.3
+            this.hoverRequested = true
           } else {
+            this.hoverRequested = false // 快甩清悬浮标志，弹道正常飞
             this.physics.startFling(vx, vy)
           }
           window.gugu.emitEvent('fling', { vx: Math.round(vx), vy: Math.round(vy) })
         } else {
-          this.physics.mode = this.hoverRequested ? 'hover' : 'ballistic'
+          // 原地松手（没怎么动）：也停住（轻放=放）
+          this.physics.mode = 'hover'
           this.physics.vy = 0
           this.physics.vx = 0
+          this.hoverRequested = true
         }
         return
       }

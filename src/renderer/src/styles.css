@@ -758,6 +758,28 @@ body {
   color: var(--ink);
 }
 
+.chat-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.chat-gear {
+  border: none;
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+}
+
+.chat-gear:hover {
+  color: var(--ink);
+  background: rgba(58, 58, 68, 0.08);
+}
+
 .chat-status {
   font-size: 10px;
   color: var(--accent-deep);
